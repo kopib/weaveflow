@@ -34,8 +34,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install uv
-        uv pip install --system black flake8 pytest
-        if [ -f requirements.txt ]; then uv pip install --system -r requirements.txt; fi
+        # Install testing tools (like flake8) that might not be in your project dependencies
+        uv pip install --system flake8
+        # Install the project itself and all its dependencies from pyproject.toml
+        uv pip install --system -e .
         
     # Checks your code formatting with black
     - name: Check formatting with black
