@@ -87,7 +87,7 @@ class PandasWeaveGraph(_WeaveGraph):
         mindist: float = 1.2,
         legend: bool = True,
     ):
-        """Plots final graph for a given weave. 
+        """Plots final graph for a given weave.
 
         Args:
             size (int): Size of figure. Defaults to 12.

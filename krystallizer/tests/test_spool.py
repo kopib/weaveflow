@@ -22,6 +22,7 @@ def stock_data(
 @dataclass
 class StockData:
     """Data class for collection all variables from registry config files."""
+
     price: float
     pe_ratio: float
     ps_ratio: float
@@ -33,6 +34,7 @@ class StockData:
 @dataclass
 class DummyDataAsset:
     """Dummy asset class for testing."""
+
     dummy1: int
     dummy2: int
     dummy3: int
@@ -58,7 +60,7 @@ def test_spool_toml_function():
         "pe_ratio": 35.41,
         "ps_ratio": 8.62,
         "peg_ratio": 116.31,
-        "pb_ratio": 52.6    
+        "pb_ratio": 52.6,
     }
 
 
@@ -79,7 +81,7 @@ def test_spool_toml_class():
         "pe_ratio": 35.41,
         "ps_ratio": 8.62,
         "peg_ratio": 116.31,
-        "pb_ratio": 52.6    
+        "pb_ratio": 52.6,
     }
 
 

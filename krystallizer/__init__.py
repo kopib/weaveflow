@@ -17,4 +17,11 @@ from krystallizer._decorators import weave, rethread
 from krystallizer._decorators import spool, spool_asset
 
 # --- Define main API for krystallizer module ---
-__all__ = ["PandasWeave", "PandasWeaveGraph", "weave", "rethread", "spool", "spool_asset"]
+__all__ = [
+    "PandasWeave",
+    "PandasWeaveGraph",
+    "weave",
+    "rethread",
+    "spool",
+    "spool_asset",
+]

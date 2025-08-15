@@ -23,8 +23,8 @@ class _BaseWeave(ABC):
                 raise TypeError(
                     f"Argument 'weave_tasks' contains a non-weave task: {weave_task!r}"
                 )
-            
-    @abstractmethod      
+
+    @abstractmethod
     def run(self):
         """Run the main krystallizer application."""
         pass
@@ -134,9 +134,9 @@ class PandasWeave(_BaseWeave):
                 for oarg in optional_args
                 if oarg in self.global_optionals
             }
-            task_optionals = self.optionals.get(
-                weave_name, {}
-            ) or self.optionals.get(weave_task, {})
+            task_optionals = self.optionals.get(weave_name, {}) or self.optionals.get(
+                weave_task, {}
+            )
             oargs.update(task_optionals)
 
             # Transform data base based on meta from weave task and define final rargs

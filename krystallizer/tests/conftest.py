@@ -34,10 +34,12 @@ def base_dataframe() -> pd.DataFrame:
 @pytest.fixture
 def finacial_dataframe() -> pd.DataFrame:
     """A shared fixture for a baseline DataFrame."""
-    df = pd.DataFrame({
-        "stocks": [149_523_331.5, 12_403.9, 210_430.3, 3_310, 340_000.6],
-        "investments": [100_000, 100_000, 100_000, 100_000, 100_000],
-        "rest": [-32_041_301.2, 2_051, 0.0, 17_019.21, -29_304.08],
-        "something": [1, 2, 3, 4, 5]
-    })
+    df = pd.DataFrame(
+        {
+            "stocks": [149_523_331.5, 12_403.9, 210_430.3, 3_310, 340_000.6],
+            "investments": [100_000, 100_000, 100_000, 100_000, 100_000],
+            "rest": [-32_041_301.2, 2_051, 0.0, 17_019.21, -29_304.08],
+            "something": [1, 2, 3, 4, 5],
+        }
+    )
     return df

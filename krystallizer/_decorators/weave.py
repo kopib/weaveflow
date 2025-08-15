@@ -62,7 +62,9 @@ def _is_weave(f: callable) -> bool:
     )
 
 
-def weave(outputs: str | list[str], nrargs: int = None, params_from: object = None) -> callable:
+def weave(
+    outputs: str | list[str], nrargs: int = None, params_from: object = None
+) -> callable:
 
     # TODO: Infer number of inputs if not provided
 
@@ -92,17 +94,17 @@ def weave(outputs: str | list[str], nrargs: int = None, params_from: object = No
         # If function is already a weave task, return function
         if _is_weave(f):
             return f
-        
+
         setattr(f, "_weave", True)
-        
+
         # Set function attributes
         required_args, optional_args = _get_function_args(f, nrargs)
 
         if params_from is not None:
             params_object = params_from()
-            params = getattr(params_object, "__dict__", {})  
+            params = getattr(params_object, "__dict__", {})
         else:
-            params = {}      
+            params = {}
 
         required_args = [arg for arg in required_args if arg not in params]
 

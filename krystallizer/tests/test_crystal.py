@@ -44,9 +44,7 @@ def test_error_on_non_weave(base_dataframe_input):
 
     # Raise KeyError if some required arguments are not found in database for `PandasWeave`
     with pytest.raises(KeyError):
-        PandasWeave(
-            database=base_dataframe_input, weave_tasks=[calculate_stats]
-        ).run()
+        PandasWeave(database=base_dataframe_input, weave_tasks=[calculate_stats]).run()
 
     def invalid_inputs_weave(col1: pd.Series):
         return col1 + 1
@@ -77,13 +75,9 @@ def test_error_on_non_weave(base_dataframe_input):
 def test_weave_runs(base_dataframe, base_dataframe_input, weave_func):
     """Tests weave 'add_columns' and 'subtract_columns' one-by-one."""
     # 'weave_func' is now the actual function object
-    weave = PandasWeave(
-        database=base_dataframe_input, weave_tasks=[weave_func]
-    )
+    weave = PandasWeave(database=base_dataframe_input, weave_tasks=[weave_func])
     weave.run()
-    expected_df = base_dataframe[
-        weave_func._suture_rargs + weave_func._suture_outputs
-    ]
+    expected_df = base_dataframe[weave_func._suture_rargs + weave_func._suture_outputs]
     pd.testing.assert_frame_equal(weave.database, expected_df)
 
 
@@ -165,9 +159,7 @@ def test_rethread(base_dataframe_input: pd.DataFrame):
 
     meta = {"col1": "diff", "col2": "sum"}
     calculate_stats_t = rethread(calculate_stats, meta=meta)
-    weave = PandasWeave(
-        database=base_dataframe_input, weave_tasks=[calculate_stats_t]
-    )
+    weave = PandasWeave(database=base_dataframe_input, weave_tasks=[calculate_stats_t])
     weave.run()
 
     assert (

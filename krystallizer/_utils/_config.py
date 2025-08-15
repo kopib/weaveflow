@@ -17,8 +17,10 @@ def set_krystallizer_option(key: str, value: Any) -> None:
         value (Any): The value to set for the option.
     """
     if key not in _settings:
-        raise KeyError(f"Invalid option key: '{key}'. Valid keys are: {list(_settings.keys())}")
-    
+        raise KeyError(
+            f"Invalid option key: '{key}'. Valid keys are: {list(_settings.keys())}"
+        )
+
     # Optional: You can add type validation here if you want
     if key == "asset_path" and not isinstance(value, (str, Path)):
         raise TypeError(f"'{key}' must be a string or a pathlib.Path object.")

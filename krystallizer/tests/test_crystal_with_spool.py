@@ -9,6 +9,7 @@ from krystallizer._decorators import spool, weave
 @dataclass
 class Constants:
     """Data class for collection all variables from registry config files."""
+
     taxation: float
     threshold_low: int
     threshold_middle: int
@@ -30,16 +31,31 @@ def how_rich_are_you(
 ) -> float:
     """Calculate the fair value of a stock based on its ratios."""
     net_worth = (stocks - investments) * (1 - taxation) + investments + rest
-    net_worth *= (1 - margin_of_safety)
+    net_worth *= 1 - margin_of_safety
 
     return (
         net_worth,
         pd.cut(
             net_worth,
-            bins=[-inf, 0, threshold_low, threshold_middle, threshold_high, threshold_very_high, inf],
-            labels=["broke", "poor", "middle class", "rich", "very rich", "extremely rich"],
-        )
-        )
+            bins=[
+                -inf,
+                0,
+                threshold_low,
+                threshold_middle,
+                threshold_high,
+                threshold_very_high,
+                inf,
+            ],
+            labels=[
+                "broke",
+                "poor",
+                "middle class",
+                "rich",
+                "very rich",
+                "extremely rich",
+            ],
+        ),
+    )
 
 
 def test_spool_weave(finacial_dataframe):
@@ -51,9 +67,9 @@ def test_spool_weave(finacial_dataframe):
     df = finacial_dataframe.copy()
 
     net_worth = (
-        df["stocks"] - df["investments"]
-        ) * (1 - 0.42) + df["investments"] + df["rest"]
-    net_worth *= (1 - margin_of_safety)
+        (df["stocks"] - df["investments"]) * (1 - 0.42) + df["investments"] + df["rest"]
+    )
+    net_worth *= 1 - margin_of_safety
 
     df["net_worth"] = net_worth
     df["status"] = pd.cut(
@@ -62,4 +78,6 @@ def test_spool_weave(finacial_dataframe):
         labels=["broke", "poor", "middle class", "rich", "very rich", "extremely rich"],
     )
 
-    pd.testing.assert_frame_equal(weave.database[["net_worth", "status"]], df[["net_worth", "status"]])
+    pd.testing.assert_frame_equal(
+        weave.database[["net_worth", "status"]], df[["net_worth", "status"]]
+    )
