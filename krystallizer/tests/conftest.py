@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 import pytest
 
@@ -43,3 +44,10 @@ def finacial_dataframe() -> pd.DataFrame:
         }
     )
     return df
+
+
+@pytest.fixture
+def test_data_path() -> Path:
+    """Path to the test data directory."""
+    return Path(__file__).parent / "data"
+

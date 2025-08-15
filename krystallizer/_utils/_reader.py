@@ -5,11 +5,8 @@ import tomllib
 import yaml
 
 
-def _read_toml(path: str) -> dict:
+def _read_toml(path: str | Path) -> dict:
     """Convert a TOML file to a dictionary."""
-    if not path.endswith(".toml"):
-        raise ValueError("File must be a TOML file.")
-
     try:
         with open(path, "rb") as f:
             return tomllib.load(f)
@@ -19,11 +16,8 @@ def _read_toml(path: str) -> dict:
         raise ValueError(f"Error decoding TOML file: {e}")
 
 
-def _read_yaml(path: str) -> dict:
+def _read_yaml(path: str | Path) -> dict:
     """Convert a YAML file to a dictionary."""
-    if not path.endswith(".yaml") and not path.endswith(".yml"):
-        raise ValueError("File must be a YAML file.")
-
     try:
         with open(path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
@@ -33,11 +27,8 @@ def _read_yaml(path: str) -> dict:
         raise ValueError(f"Error decoding YAML file: {e}")
 
 
-def _read_json(path: str) -> dict:
+def _read_json(path: str | Path) -> dict:
     """Convert a JSON file to a dictionary."""
-    if not path.endswith(".json"):
-        raise ValueError("File must be a JSON file.")
-
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -50,7 +41,11 @@ def _read_json(path: str) -> dict:
 class _ConfigReader:
     """Read a file and return a dictionary."""
 
-    def __init__(self, path: str) -> None:
+    def __pre__init__(self, path: Path | str) -> None:
+        if not isinstance(path, (Path, str)):
+            raise TypeError("Path must be a string or a pathlib.Path object.")
+
+    def __init__(self, path: Path | str) -> None:
         self.path = path
         self.extension = Path(path).suffix.lower()
         _engines = {

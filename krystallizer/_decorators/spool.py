@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 from pathlib import Path
@@ -36,16 +37,57 @@ class SPoolRegistry:
         """Create an InputRegistry instance from a config file."""
         data = _file_feeder(path)
         return cls(data)
+    
+
+def _handle_files_from_iterable(
+    iterable: Iterable[str | Path],
+    contain_matching: Iterable[str] | str = None,
+    include: bool = True
+) -> list: # Returning a list is more specific and often better
+    """Includes or excludes elements from an iterable based on string matching."""
+
+    if not contain_matching:
+        return list(iterable)
+    
+    if isinstance(contain_matching, str):
+        contain_matching = [contain_matching]
+        
+    if not isinstance(contain_matching, Iterable):
+        raise TypeError("Argument 'contain_matching' must be a string or an iterable.")
+    
+    return [
+        item for item in iterable
+        # - If include=True, it keeps items where a match is found.
+        # - If include=False, it keeps items where no match is found.
+        if include is any(pattern in Path(item).name for pattern in contain_matching)
+    ]
 
 
 def _load_config_data(
-    obj: callable = None, path: str = None, specific_file: str = None
+    *,
+    obj: callable = None, 
+    path: str = None, 
+    exclude: Iterable[str] = None,
+    include: Iterable[str] = None,
+    specific_file: str = None,
 ) -> dict[str, Any]:
     """Helper to find, read, and merge config files for a given object."""
+
+    # It does not make sense to specify both include and exclude
+    if exclude and include:
+        raise ValueError("Cannot specify both 'exclude' and 'include'.")
+    
+    # It does not make sense to specify exclude/include for a specific files
+    if (exclude or include) and specific_file:
+        raise ValueError("Cannot specify both 'specific_file' and 'exclude/include'.")
 
     # If path specified, use that
     if isinstance(path, (str, Path)):
         parent_dir = Path(path)
+
+        if not parent_dir.exists():
+            raise FileNotFoundError(f"Specified path not found: {parent_dir}")
+
     # Otherwise, use the directory of the object
     elif obj is not None:
         parent_dir = Path(getfile(obj)).parent
@@ -64,11 +106,28 @@ def _load_config_data(
         for ext in ["*.json", "*.yaml", "*.yml", "*.toml"]:
             config_files.extend(parent_dir.glob(ext))
 
+        # If no spool's found, raise an error
         if not config_files:
             raise FileNotFoundError(f"No config files found in {parent_dir}.")
 
+        # Remove files according to include/exclude
+        config_files = _handle_files_from_iterable(
+            config_files, 
+            include or exclude, # Pass in include or exclude pattern 
+            include=include is not None # If include is specified, include is True
+        )
+                
         for config_file in config_files:
-            data.update(_Reader(str(config_file)).read())
+            tmp_data = _Reader(config_file).read()
+            # If file is empty, skip it
+            if not tmp_data:
+                continue
+
+            data.update(tmp_data)
+
+    # If no data found in any of the files, raise an error
+    if not data:
+        raise ValueError("Config files found, but no data found in config files.")
 
     return data
 
@@ -113,7 +172,10 @@ def spool(
             @functools.wraps(original_init)
             def new_init(self, **kwargs):
                 # Load data from config files
-                loaded_data = _load_config_data(func_or_class, path, file)
+                loaded_data = _load_config_data(
+                    obj=func_or_class, 
+                    path=path, 
+                    specific_file=file)
                 # Combine loaded data with runtime kwargs (runtime kwargs win)
                 final_args = {**loaded_data, **kwargs}
                 # Filter out any args that aren't in the original __init__
@@ -133,7 +195,7 @@ def spool(
             @functools.wraps(func_or_class)
             def wrapper(**kwargs):
                 # Load data and get required args
-                loaded_data = _load_config_data(func_or_class, specific_file=file)
+                loaded_data = _load_config_data(obj=func_or_class, specific_file=file)
                 required_args, _ = _get_function_args(func_or_class)
 
                 # Check that all required args are present
