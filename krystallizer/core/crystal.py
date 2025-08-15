@@ -121,12 +121,13 @@ class PandasWeave(_BaseWeave):
         for weave_task in self.weave_tasks:
 
             # Get the function name
-            weave_name = weave_task.__name__
-            # Get the required arguments and outputs from the weave task
-            params: dict = getattr(weave_task, "_suture_params")
-            required_args: list[str] = getattr(weave_task, "_suture_rargs")
-            optional_args: list[str] = getattr(weave_task, "_suture_oargs")
-            outputs: list[str] = getattr(weave_task, "_suture_outputs")
+            weave_name = getattr(weave_task, "__name__")
+            weave_meta = getattr(weave_task, "_weave_meta")
+
+            params = weave_meta._params
+            required_args = weave_meta._rargs
+            optional_args = weave_meta._oargs
+            outputs = weave_meta._outputs
 
             # Collect all optional arguments from global setup and task-specific optionals
             oargs = {

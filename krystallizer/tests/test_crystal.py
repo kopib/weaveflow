@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 from krystallizer import PandasWeave, weave, rethread
+from krystallizer._decorators._meta import WeaveMeta
 from krystallizer._decorators._weave import _is_weave
 
 
@@ -30,14 +31,23 @@ def margin_scaled(col1: pd.Series, scaler: int = 1, margin: int = 0):
 
 
 def test_weave_decorator_attributes():
+
     assert _is_weave(add_columns)
-    assert add_columns._suture_rargs == ["col1", "col2"]
-    assert add_columns._suture_oargs == []
-    assert add_columns._suture_outputs == ["sum"]
     assert _is_weave(scale_sum)
-    assert scale_sum._suture_rargs == ["mul"]
-    assert scale_sum._suture_oargs == ["scaler"]
-    assert scale_sum._suture_outputs == ["scaled_mul"]
+
+    add_columns_weave_meta = getattr(add_columns, "_weave_meta")
+    scale_sum_weave_meta = getattr(scale_sum, "_weave_meta")
+
+    assert isinstance(add_columns_weave_meta, WeaveMeta)
+    assert isinstance(scale_sum_weave_meta, WeaveMeta)
+
+    add_columns_weave_meta._rargs == ["col1", "col2"]
+    add_columns_weave_meta._oargs == []
+    add_columns_weave_meta._outputs == ["sum"]
+
+    scale_sum_weave_meta._rargs == ["mul"]
+    scale_sum_weave_meta._oargs == ["scaler"]
+    scale_sum_weave_meta._outputs == ["scaled_mul"]
 
 
 def test_error_on_non_weave(base_dataframe_input):
@@ -77,7 +87,8 @@ def test_weave_runs(base_dataframe, base_dataframe_input, weave_func):
     # 'weave_func' is now the actual function object
     weave = PandasWeave(database=base_dataframe_input, weave_tasks=[weave_func])
     weave.run()
-    expected_df = base_dataframe[weave_func._suture_rargs + weave_func._suture_outputs]
+    meta = getattr(weave_func, "_weave_meta")
+    expected_df = base_dataframe[meta._rargs + meta._outputs]
     pd.testing.assert_frame_equal(weave.database, expected_df)
 
 
@@ -164,7 +175,7 @@ def test_rethread(base_dataframe_input: pd.DataFrame):
 
     assert (
         list(weave.database.columns)
-        == list(meta.keys()) + calculate_stats_t._suture_outputs
+        == list(meta.keys()) + calculate_stats_t._weave_meta._outputs
     )
 
     expected_df = base_dataframe_input.copy()

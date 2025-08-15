@@ -163,7 +163,7 @@ def spool(
 
     def decorator(func_or_class: callable) -> callable:
 
-        setattr(func_or_class, "__spool__", True)
+        setattr(func_or_class, "_spool", True)
 
         # --- Handle class decoration ---
         if isclass(func_or_class):
@@ -212,7 +212,6 @@ def spool(
 
             return wrapper
 
-    # This is the new part that handles the two call patterns
     if _func is None:
         # Return the decorator itself for Python to apply.
         return decorator

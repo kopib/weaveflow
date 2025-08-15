@@ -5,6 +5,8 @@ Main decorator for weave tasks on data frames.
 import functools
 import inspect
 
+from krystallizer._decorators._meta import WeaveMeta
+
 
 def _get_function_args(f: callable, nrargs: int = None) -> tuple[list[str], list[str]]:
     """
@@ -53,13 +55,7 @@ def _get_function_args(f: callable, nrargs: int = None) -> tuple[list[str], list
 
 def _is_weave(f: callable) -> bool:
     """Check if a function is a weave task."""
-    return (
-        callable(f)
-        and hasattr(f, "_weave")
-        and hasattr(f, "_suture_rargs")
-        and hasattr(f, "_suture_oargs")
-        and hasattr(f, "_suture_outputs")
-    )
+    return callable(f) and hasattr(f, "_weave_meta")
 
 
 def weave(
@@ -75,7 +71,7 @@ def weave(
         )
 
     if params_from is not None:
-        if not hasattr(params_from, "__spool__"):
+        if not hasattr(params_from, "_spool"):
             raise TypeError(
                 "Argument 'params_from' must be a callable object, "
                 "typically a function or class decorated with @spool."
@@ -108,10 +104,19 @@ def weave(
 
         required_args = [arg for arg in required_args if arg not in params]
 
-        setattr(f, "_suture_rargs", required_args)
-        setattr(f, "_suture_oargs", optional_args)
-        setattr(f, "_suture_outputs", outputs)
-        setattr(f, "_suture_params", params)
+        weave_meta = WeaveMeta(
+            _weave=True,
+            _rargs=required_args,
+            _oargs=optional_args,
+            _outputs=outputs,
+            _params=params,
+        )
+        setattr(f, "_weave_meta", weave_meta)
+
+        # setattr(f, "_suture_rargs", required_args)
+        # setattr(f, "_suture_oargs", optional_args)
+        # setattr(f, "_suture_outputs", outputs)
+        # setattr(f, "_suture_params", params)
 
         # Wrap decoarated function
         @functools.wraps(f)
@@ -135,6 +140,10 @@ def rethread(f: callable, meta: dict[str, str] = None) -> callable:
 
     if not isinstance(meta, dict):
         return f
+    
+    # Get weave meta data from function
+    weave_meta = getattr(f, "_weave_meta")
+    setattr(weave_meta, "_meta_mapping", meta)
 
     setattr(f, "_suture_meta", meta)
 

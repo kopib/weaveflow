@@ -49,7 +49,7 @@ def test_spool_toml_function():
     # Use a different variable name for the result
     data = stock_data()
 
-    assert hasattr(stock_data, "__spool__")
+    assert hasattr(stock_data, "_spool")
     assert isinstance(data, SPoolRegistry)
     assert data.price == 233.33
     assert data.pe_ratio == 35.41
@@ -70,7 +70,7 @@ def test_spool_toml_class():
     # Use a different variable name for the result
     data = StockData()
 
-    assert hasattr(StockData, "__spool__")
+    assert hasattr(StockData, "_spool")
     assert isinstance(data, StockData)
     assert data.price == 233.33
     assert data.pe_ratio == 35.41
@@ -90,7 +90,7 @@ def test_spool_asset():
     """Test spool_asset decorator."""
     data = DummyDataAsset()
 
-    assert hasattr(DummyDataAsset, "__spool__")
+    assert hasattr(DummyDataAsset, "_spool")
     assert isinstance(data, DummyDataAsset)
     assert data.dummy1 == 10
     assert data.dummy2 == 20
