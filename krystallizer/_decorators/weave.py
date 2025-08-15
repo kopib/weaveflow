@@ -73,7 +73,7 @@ def weave(outputs: str | list[str], nrargs: int = None, params_from: object = No
         )
 
     if params_from is not None:
-        if not hasattr(params_from, "__registry__"):
+        if not hasattr(params_from, "__spool__"):
             raise TypeError(
                 "Argument 'params_from' must be a callable object, "
                 "typically a function or class decorated with @spool."

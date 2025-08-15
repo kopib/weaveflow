@@ -1,0 +1,5 @@
+taxation: 0.42
+threshold_low: 10_000
+threshold_middle: 100_000
+threshold_high: 1_000_000
+threshold_very_high: 10_000_000

@@ -8,7 +8,7 @@ _settings = {
 }
 
 
-def set_option(key: str, value: Any) -> None:
+def set_krystallizer_option(key: str, value: Any) -> None:
     """
     Set a configuration option for the processflow package.
 
@@ -26,7 +26,7 @@ def set_option(key: str, value: Any) -> None:
     _settings[key] = value
 
 
-def get_option(key: str) -> Any:
+def _get_option(key: str) -> Any:
     """
     Get a configuration option for the processflow package.
 

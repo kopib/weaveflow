@@ -6,7 +6,7 @@ import functools
 
 from krystallizer._decorators.weave import _get_function_args
 from krystallizer._utils._reader import _ConfigReader as _Reader
-from krystallizer._utils._config import get_option
+from krystallizer._utils._config import _get_option as get_option
 
 
 @dataclass

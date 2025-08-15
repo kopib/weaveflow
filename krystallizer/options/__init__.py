@@ -1,3 +1,3 @@
-from krystallizer._utils._config import get_option, set_option
+from krystallizer._utils._config import set_krystallizer_option
 
-__all__ = ["get_option", "set_option"]
+__all__ = ["set_krystallizer_option"]
