@@ -49,5 +49,4 @@ def finacial_dataframe() -> pd.DataFrame:
 @pytest.fixture
 def test_data_path() -> Path:
     """Path to the test data directory."""
-    return Path(__file__).parent / "data"
-
+    return Path(__file__).parent / "data" / "dummy"

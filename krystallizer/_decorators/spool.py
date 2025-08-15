@@ -195,7 +195,11 @@ def spool(
             @functools.wraps(func_or_class)
             def wrapper(**kwargs):
                 # Load data and get required args
-                loaded_data = _load_config_data(obj=func_or_class, specific_file=file)
+                loaded_data = _load_config_data(
+                    obj=func_or_class, 
+                    path=path, 
+                    specific_file=file
+                    )
                 required_args, _ = _get_function_args(func_or_class)
 
                 # Check that all required args are present
@@ -226,7 +230,7 @@ def spool_asset(_func: callable = None, *, file: str = None):
     """
     # TODO: Create setup.py to set up folder structure
     asset_path = (
-        get_option("asset_path")
+        Path(get_option("asset_path"))
         or Path(__file__).parent.parent.parent / "assets/static"
     )
     return spool(_func, file=file, path=asset_path)

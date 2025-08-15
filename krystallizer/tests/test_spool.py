@@ -1,13 +1,14 @@
 from dataclasses import dataclass
+from pathlib import Path
 from krystallizer._decorators import spool, spool_asset
 from krystallizer._decorators.spool import SPoolRegistry
 from krystallizer.options import set_krystallizer_option
 
 
-set_krystallizer_option("asset_path", "assets/static")
+set_krystallizer_option("asset_path", Path(__file__).parent / "data")
 
 
-@spool
+@spool_asset
 def stock_data(
     price: float,
     pe_ratio: float,
@@ -18,7 +19,7 @@ def stock_data(
     """Returns numeric constants from the registry."""
 
 
-@spool(file="stock.toml")
+@spool_asset(file="stock.toml")
 @dataclass
 class StockData:
     """Data class for collection all variables from registry config files."""

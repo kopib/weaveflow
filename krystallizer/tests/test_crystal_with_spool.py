@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from pathlib import Path
 from numpy import inf
 import pandas as pd
 from krystallizer.core import PandasWeave
 from krystallizer._decorators import spool, weave
 
 
-@spool
+@spool(path=Path(__file__).parent / "data")
 @dataclass
 class Constants:
     """Data class for collection all variables from registry config files."""

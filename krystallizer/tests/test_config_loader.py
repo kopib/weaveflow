@@ -1,7 +1,7 @@
 from pathlib import Path
 import pytest
 from krystallizer._decorators.spool import _handle_files_from_iterable, _load_config_data
-from krystallizer.tests.data.dummy import dummy_function
+from krystallizer.tests.data.dummy.dummy import dummy_function
 
 
 def test_handle_elements_from_iterable():
