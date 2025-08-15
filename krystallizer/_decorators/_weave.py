@@ -135,7 +135,7 @@ def rethread(f: callable, meta: dict[str, str] = None) -> callable:
 
     if not isinstance(meta, dict):
         return f
-    
+
     # Get weave meta data from function
     weave_meta = getattr(f, "_weave_meta")
     setattr(weave_meta, "_meta_mapping", meta)

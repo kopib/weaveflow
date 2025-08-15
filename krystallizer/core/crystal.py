@@ -99,9 +99,7 @@ class PandasWeave(_BaseWeave):
         self.database = pd.concat([self.database, calculation_output_frame], axis=1)
 
     @staticmethod
-    def apply_weave_meta_to_df(
-        df: pd.DataFrame, meta: dict
-    ) -> pd.DataFrame:
+    def apply_weave_meta_to_df(df: pd.DataFrame, meta: dict) -> pd.DataFrame:
         if not isinstance(meta, dict):
             return df
 

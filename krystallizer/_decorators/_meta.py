@@ -6,6 +6,7 @@ class WeaveMeta:
     """
     Metadata for the Weave class.
     """
+
     _weave: bool
     _rargs: list[str]
     _oargs: list[str]
@@ -19,6 +20,7 @@ class SutureMeta:
     """
     Metadata for the Suture class.
     """
+
     _suture: bool
     _suture_rargs: list[str]
     _suture_oargs: list[str]
@@ -32,5 +34,6 @@ class RefineMeta:
     """
     Metadata for the Refine class.
     """
+
     _refine: bool
     _refine_description: str
