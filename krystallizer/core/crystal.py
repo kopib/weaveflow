@@ -100,10 +100,8 @@ class PandasWeave(_BaseWeave):
 
     @staticmethod
     def apply_weave_meta_to_df(
-        df: pd.DataFrame, transformed_weave: callable
+        df: pd.DataFrame, meta: dict
     ) -> pd.DataFrame:
-        meta = getattr(transformed_weave, "_suture_meta", None)
-
         if not isinstance(meta, dict):
             return df
 
@@ -143,7 +141,7 @@ class PandasWeave(_BaseWeave):
             # Transform data base based on meta from weave task and define final rargs
             database_t = self.apply_weave_meta_to_df(
                 df=self.database.copy(),
-                transformed_weave=weave_task,
+                meta=weave_meta._meta_mapping,
             )
             self.check_intersection_columns_dataframe(
                 df=database_t, expected_cols=required_args

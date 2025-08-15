@@ -113,11 +113,6 @@ def weave(
         )
         setattr(f, "_weave_meta", weave_meta)
 
-        # setattr(f, "_suture_rargs", required_args)
-        # setattr(f, "_suture_oargs", optional_args)
-        # setattr(f, "_suture_outputs", outputs)
-        # setattr(f, "_suture_params", params)
-
         # Wrap decoarated function
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -144,7 +139,5 @@ def rethread(f: callable, meta: dict[str, str] = None) -> callable:
     # Get weave meta data from function
     weave_meta = getattr(f, "_weave_meta")
     setattr(weave_meta, "_meta_mapping", meta)
-
-    setattr(f, "_suture_meta", meta)
 
     return f
