@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 from krystallizer import PandasWeave, weave, rethread
-from krystallizer._decorators.weave import _is_weave
+from krystallizer._decorators._weave import _is_weave
 
 
 @weave(outputs="sum")

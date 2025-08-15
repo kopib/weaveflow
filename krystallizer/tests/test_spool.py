@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from krystallizer._decorators import spool, spool_asset
-from krystallizer._decorators.spool import SPoolRegistry
+from krystallizer._decorators._spool import SPoolRegistry
 from krystallizer.options import set_krystallizer_option
 
 

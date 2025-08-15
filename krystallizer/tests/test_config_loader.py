@@ -1,6 +1,6 @@
 from pathlib import Path
 import pytest
-from krystallizer._decorators.spool import (
+from krystallizer._decorators._spool import (
     _handle_files_from_iterable,
     _load_config_data,
 )
