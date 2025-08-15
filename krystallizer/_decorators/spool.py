@@ -37,26 +37,27 @@ class SPoolRegistry:
         """Create an InputRegistry instance from a config file."""
         data = _file_feeder(path)
         return cls(data)
-    
+
 
 def _handle_files_from_iterable(
     iterable: Iterable[str | Path],
     contain_matching: Iterable[str] | str = None,
-    include: bool = True
-) -> list: # Returning a list is more specific and often better
+    include: bool = True,
+) -> list:  # Returning a list is more specific and often better
     """Includes or excludes elements from an iterable based on string matching."""
 
     if not contain_matching:
         return list(iterable)
-    
+
     if isinstance(contain_matching, str):
         contain_matching = [contain_matching]
-        
+
     if not isinstance(contain_matching, Iterable):
         raise TypeError("Argument 'contain_matching' must be a string or an iterable.")
-    
+
     return [
-        item for item in iterable
+        item
+        for item in iterable
         # - If include=True, it keeps items where a match is found.
         # - If include=False, it keeps items where no match is found.
         if include is any(pattern in Path(item).name for pattern in contain_matching)
@@ -65,8 +66,8 @@ def _handle_files_from_iterable(
 
 def _load_config_data(
     *,
-    obj: callable = None, 
-    path: str = None, 
+    obj: callable = None,
+    path: str = None,
     exclude: Iterable[str] = None,
     include: Iterable[str] = None,
     specific_file: str = None,
@@ -76,7 +77,7 @@ def _load_config_data(
     # It does not make sense to specify both include and exclude
     if exclude and include:
         raise ValueError("Cannot specify both 'exclude' and 'include'.")
-    
+
     # It does not make sense to specify exclude/include for a specific files
     if (exclude or include) and specific_file:
         raise ValueError("Cannot specify both 'specific_file' and 'exclude/include'.")
@@ -112,11 +113,11 @@ def _load_config_data(
 
         # Remove files according to include/exclude
         config_files = _handle_files_from_iterable(
-            config_files, 
-            include or exclude, # Pass in include or exclude pattern 
-            include=include is not None # If include is specified, include is True
+            config_files,
+            include or exclude,  # Pass in include or exclude pattern
+            include=include is not None,  # If include is specified, include is True
         )
-                
+
         for config_file in config_files:
             tmp_data = _Reader(config_file).read()
             # If file is empty, skip it
@@ -173,9 +174,8 @@ def spool(
             def new_init(self, **kwargs):
                 # Load data from config files
                 loaded_data = _load_config_data(
-                    obj=func_or_class, 
-                    path=path, 
-                    specific_file=file)
+                    obj=func_or_class, path=path, specific_file=file
+                )
                 # Combine loaded data with runtime kwargs (runtime kwargs win)
                 final_args = {**loaded_data, **kwargs}
                 # Filter out any args that aren't in the original __init__
@@ -196,10 +196,8 @@ def spool(
             def wrapper(**kwargs):
                 # Load data and get required args
                 loaded_data = _load_config_data(
-                    obj=func_or_class, 
-                    path=path, 
-                    specific_file=file
-                    )
+                    obj=func_or_class, path=path, specific_file=file
+                )
                 required_args, _ = _get_function_args(func_or_class)
 
                 # Check that all required args are present
