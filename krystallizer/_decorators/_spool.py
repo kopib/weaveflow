@@ -152,7 +152,13 @@ def _file_feeder(path: str):
 
 
 def spool(
-    _func: callable = None, *, feed_file: str = None, file: str = None, path: str = None
+    _func: callable = None, 
+    *, 
+    feed_file: str = None, 
+    file: str = None, 
+    path: str = None,
+    exclude: Iterable[str] = None,
+    include: Iterable[str] = None,
 ) -> callable:
     """
     A decorator that auto-populates an object from config files.
@@ -174,7 +180,8 @@ def spool(
             def new_init(self, **kwargs):
                 # Load data from config files
                 loaded_data = _load_config_data(
-                    obj=func_or_class, path=path, specific_file=file
+                    obj=func_or_class, path=path, specific_file=file, exclude=exclude,
+                    include=include,
                 )
                 # Combine loaded data with runtime kwargs (runtime kwargs win)
                 final_args = {**loaded_data, **kwargs}
@@ -196,7 +203,8 @@ def spool(
             def wrapper(**kwargs):
                 # Load data and get required args
                 loaded_data = _load_config_data(
-                    obj=func_or_class, path=path, specific_file=file
+                    obj=func_or_class, path=path, specific_file=file, exclude=exclude,
+                    include=include,
                 )
                 required_args, _ = _get_function_args(func_or_class)
 

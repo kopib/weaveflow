@@ -1,0 +1,14 @@
+subscription_int = 45
+
+[city_dict]
+Cologne = 1000
+Berlin = 1250
+Munich = 1500
+Hamburg = 1210
+Frankfurt = 1380
+
+[children_dict]
+0 = 0
+1 = 400
+2 = 700
+3 = 950

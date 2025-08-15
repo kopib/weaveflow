@@ -13,7 +13,7 @@ and the decorators for defining calculation tasks.
 """
 
 from krystallizer.core import PandasWeave, PandasWeaveGraph
-from krystallizer._decorators import weave, rethread
+from krystallizer._decorators import weave, rethread, weave_refine
 from krystallizer._decorators import spool, spool_asset
 
 # --- Define main API for krystallizer module ---
@@ -21,6 +21,7 @@ __all__ = [
     "PandasWeave",
     "PandasWeaveGraph",
     "weave",
+    "weave_refine",
     "rethread",
     "spool",
     "spool_asset",

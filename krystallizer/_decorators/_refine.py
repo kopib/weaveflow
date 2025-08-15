@@ -1,10 +1,13 @@
+from collections.abc import Iterable
 import functools
 import inspect
 from typing import Callable
 
+from krystallizer._decorators._meta import RefineMeta
 
-def refine(
-    _func: Callable = None, *, description: str = None, on_method: str = "run"
+
+def weave_refine(
+    _func: Callable = None, *, description: str = None, on_method: str = None
 ) -> Callable:
     """
     A smart decorator for DataFrame transformation tasks.
@@ -15,9 +18,13 @@ def refine(
     """
 
     def decorator(func_or_class: Callable) -> Callable:
+
+        # Define meta data class for refine decorator
+        refine_meta = RefineMeta(True, description or func_or_class.__name__)
+
         if inspect.isclass(func_or_class):
 
-            # Logic for decorating a CLASS
+            # Class decoration
             @functools.wraps(func_or_class, updated=())
             def class_wrapper(*args, **kwargs):
                 # Create an instance of the original class
@@ -27,25 +34,22 @@ def refine(
                     raise AttributeError(
                         f"Instance of {func_or_class.__name__} has no method {on_method!r}"
                     )
-                method_to_run = getattr(instance, on_method)
+                method_to_run = getattr(instance, on_method or "run")
 
                 # Call the method and return its result
                 return method_to_run()
 
-            # Also tag the wrapper so the ProcessFlow knows what it is
-            setattr(class_wrapper, "__refined__", True)
-            setattr(
-                class_wrapper,
-                "_refine_description",
-                description or func_or_class.__name__,
-            )
+            setattr(class_wrapper, "_refine_meta", refine_meta)
             return class_wrapper
 
         else:
-            # Logic for decorating a FUNCTION
+
+            if on_method is not None:
+                raise ValueError("Argument 'on_method' only valid for classes.")
+
+            # Function decoration
             f = func_or_class
-            setattr(f, "__refined__", True)
-            setattr(f, "_refine_description", description or f.__name__)
+            setattr(f, "_refine_meta", refine_meta)
 
             @functools.wraps(f)
             def func_wrapper(*args, **kwargs):
@@ -54,8 +58,6 @@ def refine(
             return func_wrapper
 
     if _func is None:
-        # Called with parentheses: @refine() or @refine(on_method=...)
         return decorator
     else:
-        # Called without parentheses: @refine
         return decorator(_func)

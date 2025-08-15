@@ -1,5 +1,6 @@
 from pathlib import Path
 import pandas as pd
+from numpy import nan
 import pytest
 
 
@@ -50,3 +51,81 @@ def finacial_dataframe() -> pd.DataFrame:
 def test_data_path() -> Path:
     """Path to the test data directory."""
     return Path(__file__).parent / "data" / "dummy"
+
+
+@pytest.fixture
+def personal_data() -> pd.DataFrame:
+    data = {
+        "age": [28, 45, 33, 62, 21, 39, 41, 55, 29, 34, 48, 65, 24, 30, 51],
+        "city": [
+            "Cologne",
+            "Berlin",
+            "Munich",
+            "Hamburg",
+            "Cologne",
+            "Berlin",
+            "Frankfurt",
+            "Munich",
+            "Cologne",
+            "Hamburg",
+            "Berlin",
+            "Frankfurt",
+            "Munich",
+            "Cologne",
+            "Berlin",
+        ],
+        "satisfaction_score": [
+            4.5,
+            3.2,
+            5.0,
+            2.1,
+            4.8,
+            3.9,
+            4.1,
+            nan,
+            3.5,
+            2.8,
+            4.2,
+            3.0,
+            4.9,
+            3.8,
+            2.5,
+        ],
+        "children": [0, 2, 1, 3, 0, 1, 2, 2, 0, 1, 3, 1, 0, 1, 2],
+        "income_thousands": [
+            55.5,
+            89.0,
+            72.1,
+            105.5,
+            42.0,
+            75.8,
+            81.2,
+            95.0,
+            61.5,
+            nan,
+            92.0,
+            110.2,
+            48.5,
+            66.0,
+            85.1,
+        ],
+        "has_subscription": [
+            True,
+            False,
+            True,
+            False,
+            True,
+            True,
+            False,
+            True,
+            True,
+            False,
+            True,
+            True,
+            True,
+            False,
+            True,
+        ],
+    }
+    df = pd.DataFrame(data)
+    return df

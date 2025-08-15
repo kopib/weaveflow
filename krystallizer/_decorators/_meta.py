@@ -16,20 +16,6 @@ class WeaveMeta:
 
 
 @dataclass
-class SutureMeta:
-    """
-    Metadata for the Suture class.
-    """
-
-    _suture: bool
-    _suture_rargs: list[str]
-    _suture_oargs: list[str]
-    _suture_outputs: list[str]
-    _suture_params: dict[str, str]
-    _suture_meta: dict[str, str] = None
-
-
-@dataclass
 class RefineMeta:
     """
     Metadata for the Refine class.
