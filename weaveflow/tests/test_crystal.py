@@ -1,8 +1,8 @@
 import pandas as pd
 import pytest
-from krystallizer import PandasWeave, weave, rethread
-from krystallizer._decorators._meta import WeaveMeta
-from krystallizer._decorators._weave import _is_weave
+from weaveflow import PandasWeave, weave, rethread
+from weaveflow._decorators._meta import WeaveMeta
+from weaveflow._decorators._weave import _is_weave
 
 
 @weave(outputs="sum")

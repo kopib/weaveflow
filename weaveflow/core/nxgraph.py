@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 import networkx as nx
-from krystallizer.core.crystal import PandasWeave, _BaseWeave
+from weaveflow.core.crystal import PandasWeave, _BaseWeave
 
 
 class _WeaveGraph(ABC):

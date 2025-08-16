@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from numpy import inf
 import pandas as pd
-from krystallizer.core import PandasWeave
-from krystallizer._decorators import spool, weave
+from weaveflow.core import PandasWeave
+from weaveflow._decorators import spool, weave
 
 
 @spool(path=Path(__file__).parent / "data")

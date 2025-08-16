@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
-from krystallizer._decorators import spool, spool_asset
-from krystallizer._decorators._spool import SPoolRegistry
-from krystallizer.options import set_krystallizer_option
+from weaveflow._decorators import spool, spool_asset
+from weaveflow._decorators._spool import SPoolRegistry
+from weaveflow.options import set_weaveflow_option
 
 
-set_krystallizer_option("asset_path", Path(__file__).parent / "data")
+set_weaveflow_option("asset_path", Path(__file__).parent / "data")
 
 
 @spool_asset

@@ -1,6 +1,6 @@
-from krystallizer import PandasWeave, PandasWeaveGraph
-from krystallizer import weave, rethread
-from krystallizer import spool, spool_asset
+from weaveflow import PandasWeave, PandasWeaveGraph
+from weaveflow import weave, rethread
+from weaveflow import spool, spool_asset
 
 
 if __name__ == "__main__":

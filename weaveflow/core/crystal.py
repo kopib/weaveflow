@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 import pandas as pd
 
-from krystallizer._decorators._weave import _is_weave
+from weaveflow._decorators._weave import _is_weave
 
 
 class _BaseWeave(ABC):

@@ -10,8 +10,8 @@ and the decorators for defining calculation tasks.
 >>> from krystallizer import PandasWeave
 """
 
-from krystallizer.core.crystal import PandasWeave
-from krystallizer.core.nxgraph import PandasWeaveGraph
+from weaveflow.core.crystal import PandasWeave
+from weaveflow.core.nxgraph import PandasWeaveGraph
 
 # --- Define main API for krystallizer module ---
 __all__ = ["PandasWeave", "PandasWeaveGraph"]

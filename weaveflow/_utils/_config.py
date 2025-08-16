@@ -11,7 +11,7 @@ _settings = {
 }
 
 
-def set_krystallizer_option(options: Iterable[str], value: Any) -> None:
+def set_weaveflow_option(options: Iterable[str], value: Any) -> None:
     """
     Set a configuration option for the processflow package.
 

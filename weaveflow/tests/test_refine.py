@@ -1,7 +1,7 @@
 from pathlib import Path
 from dataclasses import dataclass
 from pandas import DataFrame
-from krystallizer import weave_refine, weave, spool, PandasWeave
+from weaveflow import refine, weave, spool, PandasWeave
 
 
 @spool(path=Path(__file__).parent / "data", include="costs")
@@ -34,7 +34,7 @@ def get_surplus(total_costs: int, income_thousands: int) -> int:
     return income_thousands * 1_000 - total_costs
 
 
-@weave_refine(on_method="clean")
+@refine(on_method="clean")
 class DataClenar:
 
     def __init__(self, df: DataFrame):
@@ -45,7 +45,7 @@ class DataClenar:
         return self.df
 
 
-@weave_refine(on_method="group")
+@refine(on_method="group")
 class DataGrouper:
 
     def __init__(self, df: DataFrame):

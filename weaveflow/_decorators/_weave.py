@@ -5,7 +5,7 @@ Main decorator for weave tasks on data frames.
 import functools
 import inspect
 
-from krystallizer._decorators._meta import WeaveMeta
+from weaveflow._decorators._meta import WeaveMeta
 
 
 def _get_function_args(f: callable, nrargs: int = None) -> tuple[list[str], list[str]]:

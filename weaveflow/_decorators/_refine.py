@@ -3,10 +3,10 @@ import functools
 import inspect
 from typing import Callable
 
-from krystallizer._decorators._meta import RefineMeta
+from weaveflow._decorators._meta import RefineMeta
 
 
-def weave_refine(
+def refine(
     _func: Callable = None, *, description: str = None, on_method: str = None
 ) -> Callable:
     """
