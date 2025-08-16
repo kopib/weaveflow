@@ -177,7 +177,7 @@ def spool(
             original_init = func_or_class.__init__
 
             @functools.wraps(original_init)
-            def new_init(self, **kwargs):
+            def new_init(self, **kwargs) -> Any:
                 # Load data from config files
                 loaded_data = _load_config_data(
                     obj=func_or_class,
@@ -203,7 +203,7 @@ def spool(
         else:
 
             @functools.wraps(func_or_class)
-            def wrapper(**kwargs):
+            def wrapper(**kwargs) -> SPoolRegistry:
                 # Load data and get required args
                 loaded_data = _load_config_data(
                     obj=func_or_class,

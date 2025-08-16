@@ -1,22 +1,25 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable
+from typing import override
 import pandas as pd
 
 from weaveflow._decorators._weave import _is_weave
+from weaveflow._decorators._refine import _is_refine
 
 
 class _BaseWeave(ABC):
-    """Abstract base class for all krystallizer weaves."""
+    """Abstract base class for all weaves."""
 
-    def __init__(self, weave_tasks: list[callable], weave_name: str):
+    def __init__(self, weave_tasks: list[callable], weaveflow_name: str):
         self.weave_tasks = weave_tasks
-        self.weave_name = weave_name
+        self.weaveflow_name = weaveflow_name
         self.weave_collector = defaultdict(dict)
 
     def __pre_init__(self):
 
-        if not isinstance(self.weave_tasks, list):
-            raise TypeError("'weave_tasks' must be a list of weave tasks")
+        if not isinstance(self.weave_tasks, Iterable):
+            raise TypeError("'weave_tasks' must be a Iterable of weave tasks")
 
         for weave_task in self.weave_tasks:
             if not _is_weave(weave_task):
@@ -26,7 +29,7 @@ class _BaseWeave(ABC):
 
     @abstractmethod
     def run(self):
-        """Run the main krystallizer application."""
+        """Run the main application."""
         pass
 
 
@@ -36,12 +39,12 @@ class PandasWeave(_BaseWeave):
     def __init__(
         self,
         database: pd.DataFrame,
-        weave_tasks: list[callable],
-        weave_name: str = "default",
+        weave_tasks: Iterable[callable],
+        weaveflow_name: str = "default",
         optionals: dict[str, dict[str]] = None,
         **kwargs,
     ):
-        super().__init__(weave_tasks, weave_name)
+        super().__init__(weave_tasks, weaveflow_name)
         self.database = database
         self.optionals = optionals or {}
         self.global_optionals = kwargs
@@ -112,53 +115,57 @@ class PandasWeave(_BaseWeave):
             if oarg in self.kwargs:
                 self.optionals[weave_name].update({oarg: self.kwargs[oarg]})
 
+    def _run_weave_task(self, weave_task: callable) -> None:
+        # Get the function name
+        weave_name = getattr(weave_task, "__name__")
+        weave_meta = getattr(weave_task, "_weave_meta")
+        # Get the meta information from meta object
+        params = weave_meta._params
+        required_args = weave_meta._rargs
+        optional_args = weave_meta._oargs
+        outputs = weave_meta._outputs
+        # Collect all optional arguments from global setup and task-specific optionals
+        oargs = {
+            oarg: self.global_optionals[oarg]
+            for oarg in optional_args
+            if oarg in self.global_optionals
+        }
+        task_optionals = self.optionals.get(weave_name, {}) or self.optionals.get(
+            weave_task, {}
+        )
+        oargs.update(task_optionals)
+
+        # Transform data base based on meta from weave task and define final rargs
+        database_t = self.apply_weave_meta_to_df(
+            df=self.database.copy(),
+            meta=weave_meta._meta_mapping,
+        )
+        self.check_intersection_columns_dataframe(
+            df=database_t, expected_cols=required_args
+        )
+
+        # Prepare the required arguments for the weave task + optional arguments
+        rargs = database_t[required_args].to_dict(orient="series")
+
+        # Run calculation and build the graph
+        self.weave_collector[self.weaveflow_name][weave_name] = {
+            "outputs": outputs,
+            "rargs": required_args,
+            "oargs": optional_args,
+            "params": list(params),
+        }
+        calculation_output = weave_task(**rargs, **oargs, **params)
+
+        return calculation_output, outputs, weave_name
+
     def run(self):
-        """Run the krystallizer on the database."""
+        """Run the loomer on the database."""
         for weave_task in self.weave_tasks:
 
-            # Get the function name
-            weave_name = getattr(weave_task, "__name__")
-            weave_meta = getattr(weave_task, "_weave_meta")
-
-            params = weave_meta._params
-            required_args = weave_meta._rargs
-            optional_args = weave_meta._oargs
-            outputs = weave_meta._outputs
-
-            # Collect all optional arguments from global setup and task-specific optionals
-            oargs = {
-                oarg: self.global_optionals[oarg]
-                for oarg in optional_args
-                if oarg in self.global_optionals
-            }
-            task_optionals = self.optionals.get(weave_name, {}) or self.optionals.get(
-                weave_task, {}
-            )
-            oargs.update(task_optionals)
-
-            # Transform data base based on meta from weave task and define final rargs
-            database_t = self.apply_weave_meta_to_df(
-                df=self.database.copy(),
-                meta=weave_meta._meta_mapping,
-            )
-            self.check_intersection_columns_dataframe(
-                df=database_t, expected_cols=required_args
-            )
-
-            # Prepare the required arguments for the weave task + optional arguments
-            rargs = database_t[required_args].to_dict(orient="series")
-
-            # Run calculation and build the graph
-            self.weave_collector[self.weave_name][weave_name] = {
-                "outputs": outputs,
-                "rargs": required_args,
-                "oargs": optional_args,
-                "params": list(params),
-            }
-            calculation_output = weave_task(**rargs, **oargs, **params)
+            calculation_output, outputs, weave_name = self._run_weave_task(weave_task)
 
             if calculation_output is None:
-                self.weave_collector[self.weave_name].pop(weave_task)
+                self.weave_collector[self.weaveflow_name].pop(weave_name)
                 continue
 
             # TODO: Add option to extend database 'database_t' or 'self.database'
@@ -178,10 +185,79 @@ class Loom(PandasWeave):
     def __init__(
         self,
         database: pd.DataFrame,
-        weave_tasks: list[callable],
-        weave_name: str = "default",
+        weave_tasks: Iterable[callable],
+        weaveflow_name: str = "default",
         optionals: dict[str, dict[str]] = None,
         **kwargs,
     ):
+        all_tasks = list(weave_tasks)
+        # Filter only weave tasks
+        filtered_weave_tasks = [task for task in weave_tasks if _is_weave(task)]
+        # TODO: Rename weave_tasks to tasks
         # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.
-        super().__init__(database, weave_tasks, weave_name, optionals, **kwargs)
+        super().__init__(
+            database, filtered_weave_tasks, weaveflow_name, optionals, **kwargs
+        )
+        self.tasks = all_tasks  # All tasks
+        self.refine_collector = defaultdict(dict)
+
+    @override
+    def __pre_init__(self):
+        """Pre-initialization checks."""
+        if not isinstance(self.tasks, Iterable):
+            raise TypeError("'tasks' must be a Iterable of callables")
+        for task in self.weave_tasks:
+            if not (_is_weave(task) or _is_refine(task)):
+                raise TypeError(
+                    f"Argument 'weave_tasks' contains a non-weave and non-refine task: {task!r}"
+                )
+
+    def _run_refine_task(self, refine_task: callable) -> None:
+        """Run refine task on the database. The data base is modified in-place.
+
+        Args:
+            refine_task (callable): The refine task to run. The task must
+            take a pandas DataFrame as input and return a pandas DataFrame.
+        """
+        # Get the meta information from refine object
+        refine_meta = getattr(refine_task, "_refine_meta")
+        self.weave_collector[self.weaveflow_name][
+            refine_meta._refine_name
+        ] = refine_meta.__dict__
+        # Run calculation and build the graph
+        self.database = refine_task(self.database)
+
+    def _run(self):
+
+        for task in self.tasks:
+
+            # If task is a weave task, calculate new columns and add them to the database
+            if _is_weave(task):
+
+                # Run weave task on task arguments according to meta information
+                calculation_output, outputs, weave_name = self._run_weave_task(task)
+
+                # If calculation output is None, skip the task
+                if calculation_output is None:
+                    self.weave_collector[self.weaveflow_name].pop(weave_name)
+                    continue
+
+                # Extend the database with the calculation output
+                self.extend_database(
+                    outputs=outputs,
+                    calculation_output=calculation_output,
+                    index=self.database.index,
+                    columns=outputs,
+                )
+
+            # If task is a refine task, refine the database
+            elif _is_refine(task):
+                self._run_refine_task(task)
+
+            else:
+                raise TypeError(f"Unknown task type: {task!r}")
+
+    @override
+    def run(self):
+        """Run the loomer on specified database."""
+        self._run()

@@ -23,3 +23,5 @@ class RefineMeta:
 
     _refine: bool
     _refine_description: str
+    _refine_name: str
+    _on_method: str = None

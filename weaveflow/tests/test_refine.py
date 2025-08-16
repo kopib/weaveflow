@@ -1,6 +1,8 @@
 from pathlib import Path
 from dataclasses import dataclass
-from pandas import DataFrame
+from pandas import DataFrame, Series
+from pandas.testing import assert_series_equal, assert_frame_equal
+import pytest
 from weaveflow import refine, weave, spool, Loom
 
 
@@ -21,9 +23,11 @@ def get_total_costs(
     children_dict: dict[int, int],
     subscription_int: int,
 ) -> int:
+    # Transform to string to match the dict keys as by default
+    # toml always treats keys as strings
+    children_costs = children.astype(str).map(children_dict)
+    city_costs = city.astype(str).map(city_dict)
 
-    children_costs = children.map(children_dict)
-    city_costs = city.map(city_dict)
     subscription_costs = has_subscription * subscription_int * (children + 1)
 
     return children_costs + city_costs + subscription_costs
@@ -34,8 +38,13 @@ def get_surplus(total_costs: int, income_thousands: int) -> int:
     return income_thousands * 1_000 - total_costs
 
 
+@refine
+def clean_data(df: DataFrame) -> DataFrame:
+    return df.dropna()
+
+
 @refine(on_method="clean")
-class DataClenar:
+class DataCleaner:
 
     def __init__(self, df: DataFrame):
         self.df = df
@@ -43,6 +52,14 @@ class DataClenar:
     def clean(self):
         self.df = self.df.dropna()
         return self.df
+    
+
+class DataCleanerStatic:
+    
+    @refine # Also works for static methods
+    @staticmethod
+    def clean(df: DataFrame):
+        return df.dropna()
 
 
 @refine(on_method="group")
@@ -55,7 +72,79 @@ class DataGrouper:
         return self.df.groupby("city").sum()
 
 
-def test_basics(personal_data):
-    loom = Loom(personal_data, [get_total_costs, get_surplus])
-    # TODO: Add DataClenar and DataGrouper in the future
+def test_weave_spool_basics():
+
+    # Check meta data of weave with spooled params
+    meta = getattr(get_total_costs, "_weave_meta")
+    assert meta._rargs == ["city", "children", "has_subscription"]
+    assert meta._oargs == []
+    assert meta._outputs == ["total_costs"]
+    assert meta._params == {
+        "city_dict": {
+            "Cologne": 1000,
+            "Berlin": 1250,
+            "Munich": 1500,
+            "Hamburg": 1210,
+            "Frankfurt": 1380,
+        },
+        "children_dict": {"0": 0, "1": 400, "2": 700, "3": 950},
+        "subscription_int": 45,
+    }
+
+
+@pytest.mark.parametrize(
+    "refiner_task", 
+    [DataCleaner, DataCleanerStatic.clean]
+)
+def test_consistency_in_refiner(personal_data, refiner_task):
+
+    # Define expected loom using `clean_data` refiner
+    expected_loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data])
+    expected_loom.run()
+    
+    loom_to_test = Loom(personal_data, [get_total_costs, get_surplus, refiner_task])
+    loom_to_test.run()
+
+    assert_frame_equal(expected_loom.database, loom_to_test.database)
+
+
+def test_loomflow_with_refiner(personal_data):
+
+    # Define loom with clean_data refiner
+    loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data])
     loom.run()
+
+    # assert that 2 rows (number 7 and 9) are dropped by clean_data refiner due to nan values
+    assert len(loom.database) == len(personal_data) - 2
+    assert loom.database.index.tolist() == [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14]
+    # Assert new columns are added by weave functions
+    assert all(c in loom.database.columns for c in ["total_costs", "surplus"])
+
+    # Define expected total cost column based on data inputs and spooled params
+    total_cost_expected = Series(
+        [1045, 1950, 1990, 2160, 1045, 1740, 2080, 1045, 2380, 1870, 1545, 1400, 2085],
+        name="total_costs",
+        index=loom.database.index,
+    )
+    assert_series_equal(loom.database["total_costs"], total_cost_expected)
+    # Define expected surplus column based on data inputs and total cost
+    surplus = Series(
+        [
+            54455.0,
+            87050.0,
+            70110.0,
+            103340.0,
+            40955.0,
+            74060.0,
+            79120.0,
+            60455.0,
+            89620.0,
+            108330.0,
+            46955.0,
+            64600.0,
+            83015.0,
+        ],
+        name="surplus",
+        index=loom.database.index,
+    )
+    assert_series_equal(loom.database["surplus"], surplus)

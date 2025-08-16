@@ -6,23 +6,37 @@ from typing import Callable
 from weaveflow._decorators._meta import RefineMeta
 
 
+def _is_refine(f: Callable) -> bool:
+    """Check if a function is a refine task."""
+    return callable(f) and hasattr(f, "_refine_meta")
+
+
 def refine(
     _func: Callable = None, *, description: str = None, on_method: str = None
 ) -> Callable:
     """
     A smart decorator for DataFrame transformation tasks.
 
-    - If applied to a FUNCTION, it tags it with metadata.
-    - If applied to a CLASS, it automatically calls a specified method
+    - If applied to a function, it tags it with metadata.
+    - If applied to a class, it automatically calls a specified method
       (default 'run') upon instantiation and returns the result.
     """
 
+    # Capture the on_method from the arguments passed to refine
+    _on_method_arg = on_method
+
     def decorator(func_or_class: Callable) -> Callable:
 
+        if _is_refine(func_or_class):
+            return func_or_class
+
         # Define meta data class for refine decorator
-        refine_meta = RefineMeta(True, description or func_or_class.__name__)
+        refine_meta = RefineMeta(True, description, func_or_class.__name__)
 
         if inspect.isclass(func_or_class):
+
+            # Fallback to 'run' if no method is specified
+            method_to_run_name = _on_method_arg or "run"
 
             # Class decoration
             @functools.wraps(func_or_class, updated=())
@@ -30,12 +44,13 @@ def refine(
                 # Create an instance of the original class
                 instance = func_or_class(*args, **kwargs)
                 # Get the method to be executed
-                if not hasattr(instance, on_method):
+                if not hasattr(instance, method_to_run_name):
                     raise AttributeError(
-                        f"Instance of {func_or_class.__name__} has no method {on_method!r}"
+                        f"Instance of {func_or_class.__name__} has no method {method_to_run_name!r}"
                     )
-                method_to_run = getattr(instance, on_method or "run")
-
+                method_to_run = getattr(instance, method_to_run_name)
+                # In case of class decoration, store the method name in meta data
+                setattr(refine_meta, "_on_method", method_to_run_name)
                 # Call the method and return its result
                 return method_to_run()
 
@@ -44,7 +59,7 @@ def refine(
 
         else:
 
-            if on_method is not None:
+            if _on_method_arg is not None:
                 raise ValueError("Argument 'on_method' only valid for classes.")
 
             # Function decoration
