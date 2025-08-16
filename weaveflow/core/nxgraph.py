@@ -206,5 +206,5 @@ class Tapestry(_WeaveGraph):
 
 
 class WeaveGraph(Tapestry):
-     def __init__(self, weave: Loom):
+    def __init__(self, weave: Loom):
         super().__init__(weave)

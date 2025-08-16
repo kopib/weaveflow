@@ -176,12 +176,12 @@ class Loom(PandasWeave):
     """Loom class."""
 
     def __init__(
-        self, 
-        database: pd.DataFrame, 
+        self,
+        database: pd.DataFrame,
         weave_tasks: list[callable],
         weave_name: str = "default",
         optionals: dict[str, dict[str]] = None,
-        **kwargs
-        ):
+        **kwargs,
+    ):
         # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.
         super().__init__(database, weave_tasks, weave_name, optionals, **kwargs)
