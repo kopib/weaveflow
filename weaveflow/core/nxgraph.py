@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 import networkx as nx
-from weaveflow.core.crystal import Loom, _BaseWeave
+from weaveflow.core.loom import Loom, _BaseWeave
 
 
 class _WeaveGraph(ABC):
