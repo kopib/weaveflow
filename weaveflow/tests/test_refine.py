@@ -17,10 +17,10 @@ def get_total_costs(
     city: str,
     children: int,
     has_subscription: bool,
-    city_dict: dict[str, int], 
-    children_dict: dict[int, int], 
-    subscription_int: int
-    ) -> int:
+    city_dict: dict[str, int],
+    children_dict: dict[int, int],
+    subscription_int: int,
+) -> int:
 
     children_costs = children.map(children_dict)
     city_costs = city.map(city_dict)
@@ -56,6 +56,6 @@ class DataGrouper:
 
 
 def test_basics(personal_data):
-    pw = PandasWeave(personal_data, [get_total_costs, get_surplus]) 
+    pw = PandasWeave(personal_data, [get_total_costs, get_surplus])
     # TODO: Add DataClenar and DataGrouper in the future
     pw.run()
