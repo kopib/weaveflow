@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 
 import networkx as nx
-from weaveflow.core.crystal import PandasWeave, _BaseWeave
+from weaveflow.core.crystal import Loom, _BaseWeave
 
 
 class _WeaveGraph(ABC):
@@ -23,10 +23,10 @@ class _WeaveGraph(ABC):
         pass
 
 
-class PandasWeaveGraph(_WeaveGraph):
+class Tapestry(_WeaveGraph):
     """Object to create a final graph for a given pandas weave."""
 
-    def __init__(self, weave: PandasWeave):
+    def __init__(self, weave: Loom):
         super().__init__(weave)
         # TODO: Think about whether to use a dataclass here and whether to put into abstract class
         self.weave_collector = weave.weave_collector
@@ -44,7 +44,7 @@ class PandasWeaveGraph(_WeaveGraph):
         """
         if isinstance(nodes, (list, tuple)):
             for node in nodes:
-                PandasWeaveGraph._nx_add_nodes_checking(graph, node, **attrs)
+                Tapestry._nx_add_nodes_checking(graph, node, **attrs)
             return
 
         node = nodes
@@ -203,3 +203,8 @@ class PandasWeaveGraph(_WeaveGraph):
                 )
 
         return g
+
+
+class WeaveGraph(Tapestry):
+     def __init__(self, weave: Loom):
+        super().__init__(weave)

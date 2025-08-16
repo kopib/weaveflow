@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from weaveflow import PandasWeave, weave, rethread
+from weaveflow import Loom, weave, rethread
 from weaveflow._decorators._meta import WeaveMeta
 from weaveflow._decorators._weave import _is_weave
 
@@ -52,9 +52,9 @@ def test_weave_decorator_attributes():
 
 def test_error_on_non_weave(base_dataframe_input):
 
-    # Raise KeyError if some required arguments are not found in database for `PandasWeave`
+    # Raise KeyError if some required arguments are not found in database for `Loom`
     with pytest.raises(KeyError):
-        PandasWeave(database=base_dataframe_input, weave_tasks=[calculate_stats]).run()
+        Loom(database=base_dataframe_input, weave_tasks=[calculate_stats]).run()
 
     def invalid_inputs_weave(col1: pd.Series):
         return col1 + 1
@@ -85,22 +85,22 @@ def test_error_on_non_weave(base_dataframe_input):
 def test_weave_runs(base_dataframe, base_dataframe_input, weave_func):
     """Tests weave 'add_columns' and 'subtract_columns' one-by-one."""
     # 'weave_func' is now the actual function object
-    weave = PandasWeave(database=base_dataframe_input, weave_tasks=[weave_func])
-    weave.run()
+    loom = Loom(database=base_dataframe_input, weave_tasks=[weave_func])
+    loom.run()
     meta = getattr(weave_func, "_weave_meta")
     expected_df = base_dataframe[meta._rargs + meta._outputs]
-    pd.testing.assert_frame_equal(weave.database, expected_df)
+    pd.testing.assert_frame_equal(loom.database, expected_df)
 
 
 def test_weave_with_multiple_outputs(base_dataframe, base_dataframe_input):
     """Tests whole weave for defined weave tasks."""
     # Test whole weave
-    weave = PandasWeave(
+    loom = Loom(
         database=base_dataframe_input,
         weave_tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
     )
-    weave.run()
-    pd.testing.assert_frame_equal(weave.database, base_dataframe)
+    loom.run()
+    pd.testing.assert_frame_equal(loom.database, base_dataframe)
 
 
 def test_weave_with_optionals(base_dataframe, base_dataframe_input):
@@ -118,35 +118,35 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
 
     # --- Test task-specific optionals ---
 
-    # Define optionals arg for 'PandasWeave' via optionals dict
+    # Define optionals arg for 'Loom' via optionals dict
     optionals = {calculate_stats: {"margin": margin}, "scale_sum": {"scaler": scaler}}
-    weave = PandasWeave(
+    loom = Loom(
         database=base_dataframe_input,
         weave_tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
         optionals=optionals,
     )
-    weave.run()
-    pd.testing.assert_frame_equal(weave.database, base_dataframe_modified)
+    loom.run()
+    pd.testing.assert_frame_equal(loom.database, base_dataframe_modified)
 
     # --- Test global optionals ---
 
-    # Define optionals arg for 'PandasWeave' via kwargs
-    weave = PandasWeave(
+    # Define optionals arg for 'Loom' via kwargs
+    loom = Loom(
         database=base_dataframe_input,
         weave_tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
         margin=margin,
         scaler=scaler,
     )
-    weave.run()
-    pd.testing.assert_frame_equal(weave.database, base_dataframe_modified)
+    loom.run()
+    pd.testing.assert_frame_equal(loom.database, base_dataframe_modified)
 
     # --- Test task-specific and global optionals ---
 
     # Create expected column output
     base_dataframe_modified["scaled_col1"] = base_dataframe_modified["col1"] * 2 + 1
 
-    # Define optionals arg for 'PandasWeave' via kwargs and optionals dict
-    weave = PandasWeave(
+    # Define optionals arg for 'Loom' via kwargs and optionals dict
+    loom = Loom(
         database=base_dataframe_input,
         weave_tasks=[
             add_columns,
@@ -161,20 +161,20 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
         margin=margin,
         scaler=scaler,
     )
-    weave.run()
+    loom.run()
 
-    pd.testing.assert_frame_equal(weave.database, base_dataframe_modified)
+    pd.testing.assert_frame_equal(loom.database, base_dataframe_modified)
 
 
 def test_rethread(base_dataframe_input: pd.DataFrame):
 
     meta = {"col1": "diff", "col2": "sum"}
     calculate_stats_t = rethread(calculate_stats, meta=meta)
-    weave = PandasWeave(database=base_dataframe_input, weave_tasks=[calculate_stats_t])
-    weave.run()
+    loom = Loom(database=base_dataframe_input, weave_tasks=[calculate_stats_t])
+    loom.run()
 
     assert (
-        list(weave.database.columns)
+        list(loom.database.columns)
         == list(meta.keys()) + calculate_stats_t._weave_meta._outputs
     )
 
@@ -182,4 +182,4 @@ def test_rethread(base_dataframe_input: pd.DataFrame):
     expected_df["mul"] = expected_df["col1"] * expected_df["col2"]
     expected_df["div"] = (expected_df["col2"] / expected_df["col1"]).astype(int)
 
-    pd.testing.assert_frame_equal(weave.database, expected_df)
+    pd.testing.assert_frame_equal(loom.database, expected_df)

@@ -12,14 +12,14 @@ and the decorators for defining calculation tasks.
 >>> import krystallizer as krysta
 """
 
-from weaveflow.core import PandasWeave, PandasWeaveGraph
+from weaveflow.core import WeaveGraph, Loom
 from weaveflow._decorators import weave, rethread, refine
 from weaveflow._decorators import spool, spool_asset
 
 # --- Define main API for krystallizer module ---
 __all__ = [
-    "PandasWeave",
-    "PandasWeaveGraph",
+    "Loom",
+    "WeaveGraph",
     "weave",
     "refine",
     "rethread",

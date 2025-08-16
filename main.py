@@ -1,4 +1,4 @@
-from weaveflow import PandasWeave, PandasWeaveGraph
+from weaveflow import Loom, WeaveGraph
 from weaveflow import weave, rethread
 from weaveflow import spool, spool_asset
 

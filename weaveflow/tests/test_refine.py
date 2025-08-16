@@ -1,7 +1,7 @@
 from pathlib import Path
 from dataclasses import dataclass
 from pandas import DataFrame
-from weaveflow import refine, weave, spool, PandasWeave
+from weaveflow import refine, weave, spool, Loom
 
 
 @spool(path=Path(__file__).parent / "data", include="costs")
@@ -56,6 +56,6 @@ class DataGrouper:
 
 
 def test_basics(personal_data):
-    pw = PandasWeave(personal_data, [get_total_costs, get_surplus])
+    loom = Loom(personal_data, [get_total_costs, get_surplus])
     # TODO: Add DataClenar and DataGrouper in the future
-    pw.run()
+    loom.run()

@@ -42,7 +42,7 @@ class PandasWeave(_BaseWeave):
         **kwargs,
     ):
         super().__init__(weave_tasks, weave_name)
-        self.database = database.copy()
+        self.database = database
         self.optionals = optionals or {}
         self.global_optionals = kwargs
 
@@ -170,3 +170,18 @@ class PandasWeave(_BaseWeave):
                 index=self.database.index,
                 columns=outputs,
             )
+
+
+class Loom(PandasWeave):
+    """Loom class."""
+
+    def __init__(
+        self, 
+        database: pd.DataFrame, 
+        weave_tasks: list[callable],
+        weave_name: str = "default",
+        optionals: dict[str, dict[str]] = None,
+        **kwargs
+        ):
+        # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.
+        super().__init__(database, weave_tasks, weave_name, optionals, **kwargs)

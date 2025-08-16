@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from numpy import inf
 import pandas as pd
-from weaveflow.core import PandasWeave
+from weaveflow.core import Loom
 from weaveflow._decorators import spool, weave
 
 
@@ -61,9 +61,9 @@ def how_rich_are_you(
 
 def test_spool_weave(finacial_dataframe):
     margin_of_safety = 0.2
-    weave = PandasWeave(finacial_dataframe, [how_rich_are_you], margin_of_safety=0.2)
-    weave.run()
-    weave.database.shape == (len(finacial_dataframe), 5)
+    loom = Loom(finacial_dataframe, [how_rich_are_you], margin_of_safety=0.2)
+    loom.run()
+    loom.database.shape == (len(finacial_dataframe), 5)
 
     df = finacial_dataframe.copy()
 
@@ -80,5 +80,5 @@ def test_spool_weave(finacial_dataframe):
     )
 
     pd.testing.assert_frame_equal(
-        weave.database[["net_worth", "status"]], df[["net_worth", "status"]]
+        loom.database[["net_worth", "status"]], df[["net_worth", "status"]]
     )
