@@ -1,6 +1,6 @@
 from pathlib import Path
 from dataclasses import dataclass
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from pandas.testing import assert_series_equal, assert_frame_equal
 import pytest
 from weaveflow import refine, weave, spool, Loom
@@ -69,7 +69,7 @@ class DataGrouper:
         self.df = df
 
     def group(self):
-        return self.df.groupby("city").sum()
+        return self.df.groupby("city")["surplus"].mean()
 
 
 def test_weave_spool_basics():
@@ -148,3 +148,26 @@ def test_loomflow_with_refiner(personal_data):
         index=loom.database.index,
     )
     assert_series_equal(loom.database["surplus"], surplus)
+
+
+def test_loomflow_with_several_refiners(personal_data):
+
+    loom = Loom(personal_data, [get_total_costs, get_surplus, DataCleaner, DataGrouper])
+    loom.run()
+
+    # Assert that groupby statement worked by checking number of rows
+    assert len(loom.database) == personal_data["city"].nunique()
+    # Assert that data base is series now after application of groupby statement
+    assert isinstance(loom.database, Series) and loom.database.name == "surplus"
+    # Assert result of groupby statement is as expected
+    assert_series_equal(
+        loom.database,
+        Series(
+            [83436.25, 55116.25, 93725.0, 103340.0, 58532.5],
+            index=Index(
+                data=["Berlin", "Cologne", "Frankfurt", "Hamburg", "Munich"],
+                name="city"
+            ),
+            name="surplus"
+        )
+    )
