@@ -32,7 +32,7 @@ class Tapestry(_WeaveGraph):
         self.weave_collector = weave.weave_collector
 
     @staticmethod
-    def _nx_add_nodes_checking(
+    def _add_weave_nodes(
         graph: nx.DiGraph, nodes: Union[str, list[str]], **attrs
     ):
         """Updates edges in graph. Throws an error if a key is present and values don't match.
@@ -44,7 +44,7 @@ class Tapestry(_WeaveGraph):
         """
         if isinstance(nodes, (list, tuple)):
             for node in nodes:
-                Tapestry._nx_add_nodes_checking(graph, node, **attrs)
+                Tapestry._add_weave_nodes(graph, node, **attrs)
             return
 
         node = nodes
