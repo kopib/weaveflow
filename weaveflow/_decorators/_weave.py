@@ -6,6 +6,8 @@ import functools
 import inspect
 
 from weaveflow._decorators._meta import WeaveMeta
+from weaveflow._errors import ParamsFromIsNotASpoolError
+from weaveflow._decorators._utils import dump_object_to_dict
 
 
 def _get_function_args(f: callable, nrargs: int = None) -> tuple[list[str], list[str]]:
@@ -69,13 +71,7 @@ def weave(
             "Cannot use 'nrargs' and 'params_from' at the same time. "
             "Please specify either data inputs or parameter inputs, but not both ways."
         )
-
-    if params_from is not None:
-        if not hasattr(params_from, "_spool"):
-            raise TypeError(
-                "Argument 'params_from' must be a callable object, "
-                "typically a function or class decorated with @spool."
-            )
+    ParamsFromIsNotASpoolError(params_from)
 
     # Convert string to list
     if isinstance(outputs, str):
@@ -96,12 +92,7 @@ def weave(
         # Set function attributes
         required_args, optional_args = _get_function_args(f, nrargs)
 
-        if params_from is not None:
-            params_object = params_from()
-            params = getattr(params_object, "__dict__", {})
-        else:
-            params = {}
-
+        params = dump_object_to_dict(params_from)
         required_args = [arg for arg in required_args if arg not in params]
 
         weave_meta = WeaveMeta(

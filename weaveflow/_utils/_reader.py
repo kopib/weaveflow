@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 import json
 import tomllib
@@ -43,8 +44,24 @@ class _ConfigReader:
     def __pre__init__(self, path: Path | str) -> None:
         if not isinstance(path, (Path, str)):
             raise TypeError("Path must be a string or a pathlib.Path object.")
+    
+    @staticmethod
+    def _extend_engines(default_engine: dict[str, callable], custom_engine: dict[str, callable]) -> None:
+        """Extend the default engine with custom engines."""
+        for ext, reader in custom_engine.items():
+            if not isinstance(ext, str):
+                raise TypeError(f"Extension must be a string, got {ext}.")
+            if not isinstance(reader, Callable):
+                raise TypeError(f"Reader must be a callable, got {reader}.")
+                
+            if not ext.startswith("."):
+                ext = f".{ext}"
 
-    def __init__(self, path: Path | str) -> None:
+            default_engine[ext.lower()] = reader
+
+        return default_engine
+
+    def __init__(self, path: Path | str, custom_engine: dict[str, callable] = None) -> None:
         self.path = path
         self.extension = Path(path).suffix.lower()
         _engines = {
@@ -53,6 +70,9 @@ class _ConfigReader:
             ".yml": _read_yaml,
             ".json": _read_json,
         }
+        if custom_engine is not None:
+            _engines = self._extend_engines(_engines, custom_engine)
+
         self._engine = _engines[self.extension]
 
     def read(self) -> dict:

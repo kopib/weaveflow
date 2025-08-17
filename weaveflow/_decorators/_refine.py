@@ -1,9 +1,10 @@
-from collections.abc import Iterable
 import functools
 import inspect
-from typing import Callable
+from typing import Any, Callable
 
 from weaveflow._decorators._meta import RefineMeta
+from weaveflow._errors import ParamsFromIsNotASpoolError
+from weaveflow._decorators._utils import dump_object_to_dict
 
 
 def _is_refine(f: Callable) -> bool:
@@ -12,7 +13,7 @@ def _is_refine(f: Callable) -> bool:
 
 
 def refine(
-    _func: Callable = None, *, description: str = None, on_method: str = None
+    _func: Callable = None, *, description: str = None, on_method: str = None, params_from: Any = None
 ) -> Callable:
     """
     A smart decorator for DataFrame transformation tasks.
@@ -21,6 +22,8 @@ def refine(
     - If applied to a class, it automatically calls a specified method
       (default 'run') upon instantiation and returns the result.
     """
+        
+    ParamsFromIsNotASpoolError(params_from)
 
     # Capture the on_method from the arguments passed to refine
     _on_method_arg = on_method
@@ -29,6 +32,8 @@ def refine(
 
         if _is_refine(func_or_class):
             return func_or_class
+        
+        params = dump_object_to_dict(params_from)
 
         # Define meta data class for refine decorator
         refine_meta = RefineMeta(True, description, func_or_class.__name__)
@@ -42,7 +47,7 @@ def refine(
             @functools.wraps(func_or_class, updated=())
             def class_wrapper(*args, **kwargs):
                 # Create an instance of the original class
-                instance = func_or_class(*args, **kwargs)
+                instance = func_or_class(*args, **kwargs, **params)
                 # Get the method to be executed
                 if not hasattr(instance, method_to_run_name):
                     raise AttributeError(
@@ -68,7 +73,7 @@ def refine(
 
             @functools.wraps(f)
             def func_wrapper(*args, **kwargs):
-                return f(*args, **kwargs)
+                return f(*args, **kwargs, **params)
 
             return func_wrapper
 

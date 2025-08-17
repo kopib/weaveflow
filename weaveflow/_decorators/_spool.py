@@ -4,6 +4,7 @@ from typing import Any
 from pathlib import Path
 from inspect import getfile, isclass, signature
 import functools
+from pandas import DataFrame
 
 from weaveflow._decorators._weave import _get_function_args
 from weaveflow._utils._reader import _ConfigReader as _Reader
@@ -64,6 +65,17 @@ def _handle_files_from_iterable(
     ]
 
 
+def _load_default_extensions(custom_engine: dict[str, Any] = None) -> list[str]:
+    """Load default extensions and add custom ones if provided."""
+    default_extensions = ["*.json", "*.yaml", "*.yml", "*.toml"]
+    if custom_engine and isinstance(custom_engine, dict):
+        for ext in custom_engine:
+            ext = ext.lstrip("*").lstrip(".")
+            default_extensions.append(f"*.{ext}")
+
+    return default_extensions
+
+
 def _load_config_data(
     *,
     obj: callable = None,
@@ -71,6 +83,7 @@ def _load_config_data(
     exclude: Iterable[str] = None,
     include: Iterable[str] = None,
     specific_file: str = None,
+    custom_engine: dict[str, Any] = None,
 ) -> dict[str, Any]:
     """Helper to find, read, and merge config files for a given object."""
 
@@ -81,6 +94,10 @@ def _load_config_data(
     # It does not make sense to specify exclude/include for a specific files
     if (exclude or include) and specific_file:
         raise ValueError("Cannot specify both 'specific_file' and 'exclude/include'.")
+    
+    # Assert custom engine is callable
+    if not ((custom_engine is None) or isinstance(custom_engine, dict)):
+        raise TypeError("Custom engine must be a dict mapping file extensions to read function.")
 
     # If path specified, use that
     if isinstance(path, (str, Path)):
@@ -96,15 +113,20 @@ def _load_config_data(
         raise ValueError("Either 'obj' or 'path' must be specified.")
 
     data = {}
+    default_extensions = _load_default_extensions(custom_engine)
 
     if specific_file:
         config_path = parent_dir / specific_file
         if not config_path.exists():
             raise FileNotFoundError(f"Specified config file not found: {config_path}")
-        data = _Reader(str(config_path)).read()
+        # Read specific file, can be dict (if config file) or any other type (if custom engine)
+        data: dict | DataFrame = _Reader(str(config_path), custom_engine=custom_engine).read()
+        # If data is a DataFrame, wrap it in a dict to standardize output
+        if isinstance(data, DataFrame):
+            data = {config_path.stem: data}
     else:
         config_files = []
-        for ext in ["*.json", "*.yaml", "*.yml", "*.toml"]:
+        for ext in default_extensions:
             config_files.extend(parent_dir.glob(ext))
 
         # If no spool's found, raise an error
@@ -119,14 +141,28 @@ def _load_config_data(
         )
 
         for config_file in config_files:
-            tmp_data = _Reader(config_file).read()
+            tmp_data = _Reader(config_file, custom_engine=custom_engine).read()
+
+            if isinstance(tmp_data, DataFrame):
+                if tmp_data.empty:
+                    continue
+
+                kname = Path(config_file).stem
+
+                if kname in data:
+                    # TODO: Only raise warning and adjust kname by file extension
+                    raise ValueError(f"Duplicate key {kname!r} found in config files."
+                                     f"Filenames interfers with key from other config file."
+                                     f"Consider renaming the file when using a custom engine.")
+                
+                tmp_data = {kname: tmp_data}
+
             # If file is empty, skip it
             if not tmp_data:
                 continue
 
             data.update(tmp_data)
 
-    # If no data found in any of the files, raise an error
     if not data:
         raise ValueError("Config files found, but no data found in config files.")
 
@@ -138,7 +174,7 @@ def _file_feeder(path: str):
     path = Path(path)
 
     if not path.exists():
-        raise FileNotFoundError(f"Specified path not found: {path}")
+        raise FileNotFoundError(f"Specified path not found: {path}.")
 
     if path.is_file():
         file, path = path.name, path.parent
@@ -148,12 +184,13 @@ def _file_feeder(path: str):
         return _load_config_data(path=path)
 
     else:
-        raise ValueError(f"Path is neither a file nor a directory: {path}")
+        raise ValueError(f"Path is neither a file nor a directory: {path}.")
 
 
 def spool(
     _func: callable = None,
     *,
+    custom_engine: callable = None,
     feed_file: str = None,
     file: str = None,
     path: str = None,
@@ -185,6 +222,7 @@ def spool(
                     specific_file=file,
                     exclude=exclude,
                     include=include,
+                    custom_engine=custom_engine,
                 )
                 # Combine loaded data with runtime kwargs (runtime kwargs win)
                 final_args = {**loaded_data, **kwargs}
@@ -211,6 +249,7 @@ def spool(
                     specific_file=file,
                     exclude=exclude,
                     include=include,
+                    custom_engine=custom_engine,
                 )
                 required_args, _ = _get_function_args(func_or_class)
 
