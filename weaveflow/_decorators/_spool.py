@@ -224,6 +224,7 @@ def spool(
                     include=include,
                     custom_engine=custom_engine,
                 )
+                setattr(func_or_class, "_spool_meta", loaded_data)
                 # Combine loaded data with runtime kwargs (runtime kwargs win)
                 final_args = {**loaded_data, **kwargs}
                 # Filter out any args that aren't in the original __init__
@@ -273,7 +274,7 @@ def spool(
         return decorator(_func)
 
 
-def spool_asset(_func: callable = None, *, file: str = None):
+def spool_asset(_func: callable = None, *, file: str = None, custom_engine: callable = None,):
     """
     A wrapper for 'spool' that reads from a pre-configured asset path.
     The path can be set globally via processflow.set_option("asset_path", ...).
@@ -283,4 +284,4 @@ def spool_asset(_func: callable = None, *, file: str = None):
         Path(get_option("asset_path"))
         or Path(__file__).parent.parent.parent / "assets/static"
     )
-    return spool(_func, file=file, path=asset_path)
+    return spool(_func, file=file, path=asset_path, custom_engine=custom_engine)

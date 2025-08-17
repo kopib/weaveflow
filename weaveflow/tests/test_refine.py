@@ -1,17 +1,32 @@
 from pathlib import Path
 from dataclasses import dataclass
-from pandas import DataFrame, Series, Index
+from pandas import DataFrame, Series, Index, read_csv
 from pandas.testing import assert_series_equal, assert_frame_equal
 import pytest
-from weaveflow import refine, weave, spool, Loom
+from weaveflow import refine, weave, spool_asset, Loom
+from weaveflow.options import set_weaveflow_option
 
 
-@spool(path=Path(__file__).parent / "data", include="costs")
+# Set asset path and include spool data from specified folder
+# Set include_spool to consider files containing basename "costs" in their name
+set_weaveflow_option(
+    ["asset_path", "include_spool"], 
+    [Path(__file__).parent / "data", "costs"],
+)
+
+
+@spool_asset
 @dataclass
 class People:
     city_dict: dict[str, int]
     children_dict: dict[int, int]
     subscription_int: int
+
+
+@spool_asset(custom_engine={"csv": read_csv})
+@dataclass
+class CitySurplus:
+    costs: DataFrame
 
 
 @weave("total_costs", params_from=People)
@@ -36,6 +51,11 @@ def get_total_costs(
 @weave("surplus")
 def get_surplus(total_costs: int, income_thousands: int) -> int:
     return income_thousands * 1_000 - total_costs
+
+
+@weave("city_costs", params_from=CitySurplus)
+def get_total_city_costs(city: str, costs: DataFrame) -> int:
+    return city.map(costs.set_index("city")["costs_million_eur"])
 
 
 @refine
@@ -108,14 +128,14 @@ def test_consistency_in_refiner(personal_data, refiner_task):
 def test_loomflow_with_refiner(personal_data):
 
     # Define loom with clean_data refiner
-    loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data])
+    loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data, get_total_city_costs])
     loom.run()
 
     # assert that 2 rows (number 7 and 9) are dropped by clean_data refiner due to nan values
     assert len(loom.database) == len(personal_data) - 2
     assert loom.database.index.tolist() == [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14]
     # Assert new columns are added by weave functions
-    assert all(c in loom.database.columns for c in ["total_costs", "surplus"])
+    assert all(c in loom.database.columns for c in ["total_costs", "surplus", "city_costs"])
 
     # Define expected total cost column based on data inputs and spooled params
     total_cost_expected = Series(
@@ -146,10 +166,17 @@ def test_loomflow_with_refiner(personal_data):
     )
     assert_series_equal(loom.database["surplus"], surplus)
 
+    city_costs = Series(
+        [200, 600, 300, 400, 200, 600, 200, 200, 600, 200, 300, 200, 600],
+        name="city_costs",
+        index=loom.database.index,
+    )
+    assert_series_equal(loom.database["city_costs"], city_costs)
+
 
 def test_loomflow_with_several_refiners(personal_data):
 
-    loom = Loom(personal_data, [get_total_costs, get_surplus, DataCleaner, DataGrouper])
+    loom = Loom(personal_data, [get_total_costs, get_surplus, get_total_city_costs, DataCleaner, DataGrouper])
     loom.run()
 
     # Assert that groupby statement worked by checking number of rows

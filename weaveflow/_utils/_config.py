@@ -11,7 +11,7 @@ _settings = {
 }
 
 
-def set_weaveflow_option(options: Iterable[str], value: Any) -> None:
+def set_weaveflow_option(options: Iterable[str], values: Iterable[Any]) -> None:
     """
     Set a configuration option for the processflow package.
 
@@ -23,10 +23,16 @@ def set_weaveflow_option(options: Iterable[str], value: Any) -> None:
     if isinstance(options, str):
         options = [options]
 
+    if isinstance(values, (str, Path)):
+        values = [values]
+
     if not isinstance(options, Iterable):
         raise TypeError("Key must be a string or an iterable of strings.")
+    
+    if not isinstance(values, Iterable):
+        raise TypeError("Value must be a string or an iterable of strings.")
 
-    for option in options:
+    for option, value in zip(options, values):
         if option not in _settings:
             # TODO: Integrate with logger, warning instead of KeyError
             raise KeyError(
@@ -35,6 +41,8 @@ def set_weaveflow_option(options: Iterable[str], value: Any) -> None:
 
         if not isinstance(option, str):
             raise TypeError("Key must be a string.")
+        if not isinstance(value, (str, Path)):
+            raise TypeError("Value must be a string or a pathlib.Path.")
 
         _settings[option] = value
 

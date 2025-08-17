@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class WeaveMeta:
     """
-    Metadata for the Weave class.
+    Metadata for the Weave decorator.
     """
 
     _weave: bool
@@ -18,7 +18,7 @@ class WeaveMeta:
 @dataclass
 class RefineMeta:
     """
-    Metadata for the Refine class.
+    Metadata for the Refine decorator.
     """
 
     _refine: bool

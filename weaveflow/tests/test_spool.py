@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
-from weaveflow._decorators import spool, spool_asset
+from pandas import DataFrame, read_csv
+from pandas.testing import assert_frame_equal
+from weaveflow._decorators import spool_asset
 from weaveflow._decorators._spool import SPoolRegistry
 from weaveflow.options import set_weaveflow_option
 
@@ -42,6 +44,12 @@ class DummyDataAsset:
     id1: float
     id2: float
     id3: float
+
+
+@spool_asset(custom_engine={"csv": read_csv})
+@dataclass
+class CityCosts:
+    costs: DataFrame
 
 
 def test_spool_toml_function():
@@ -98,3 +106,11 @@ def test_spool_asset():
     assert data.id1 == 1.4
     assert data.id2 == 2.3
     assert data.id3 == 1.2
+
+
+def test_custom_engine_in_spool():
+    """Test custom engine in spool decorator."""
+    city_costs = CityCosts()
+    assert isinstance(city_costs.costs, DataFrame)
+    expected_data = read_csv(Path(__file__).parent / "data" / "costs.csv")
+    assert_frame_equal(city_costs.costs, expected_data)
