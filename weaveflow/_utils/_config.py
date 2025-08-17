@@ -28,7 +28,7 @@ def set_weaveflow_option(options: Iterable[str], values: Iterable[Any]) -> None:
 
     if not isinstance(options, Iterable):
         raise TypeError("Key must be a string or an iterable of strings.")
-    
+
     if not isinstance(values, Iterable):
         raise TypeError("Value must be a string or an iterable of strings.")
 

@@ -10,7 +10,7 @@ from weaveflow.options import set_weaveflow_option
 # Set asset path and include spool data from specified folder
 # Set include_spool to consider files containing basename "costs" in their name
 set_weaveflow_option(
-    ["asset_path", "include_spool"], 
+    ["asset_path", "include_spool"],
     [Path(__file__).parent / "data", "costs"],
 )
 
@@ -128,14 +128,18 @@ def test_consistency_in_refiner(personal_data, refiner_task):
 def test_loomflow_with_refiner(personal_data):
 
     # Define loom with clean_data refiner
-    loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data, get_total_city_costs])
+    loom = Loom(
+        personal_data, [get_total_costs, get_surplus, clean_data, get_total_city_costs]
+    )
     loom.run()
 
     # assert that 2 rows (number 7 and 9) are dropped by clean_data refiner due to nan values
     assert len(loom.database) == len(personal_data) - 2
     assert loom.database.index.tolist() == [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14]
     # Assert new columns are added by weave functions
-    assert all(c in loom.database.columns for c in ["total_costs", "surplus", "city_costs"])
+    assert all(
+        c in loom.database.columns for c in ["total_costs", "surplus", "city_costs"]
+    )
 
     # Define expected total cost column based on data inputs and spooled params
     total_cost_expected = Series(
@@ -176,7 +180,10 @@ def test_loomflow_with_refiner(personal_data):
 
 def test_loomflow_with_several_refiners(personal_data):
 
-    loom = Loom(personal_data, [get_total_costs, get_surplus, get_total_city_costs, DataCleaner, DataGrouper])
+    loom = Loom(
+        personal_data,
+        [get_total_costs, get_surplus, get_total_city_costs, DataCleaner, DataGrouper],
+    )
     loom.run()
 
     # Assert that groupby statement worked by checking number of rows

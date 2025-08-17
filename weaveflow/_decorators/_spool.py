@@ -94,10 +94,12 @@ def _load_config_data(
     # It does not make sense to specify exclude/include for a specific files
     if (exclude or include) and specific_file:
         raise ValueError("Cannot specify both 'specific_file' and 'exclude/include'.")
-    
+
     # Assert custom engine is callable
     if not ((custom_engine is None) or isinstance(custom_engine, dict)):
-        raise TypeError("Custom engine must be a dict mapping file extensions to read function.")
+        raise TypeError(
+            "Custom engine must be a dict mapping file extensions to read function."
+        )
 
     # If path specified, use that
     if isinstance(path, (str, Path)):
@@ -120,7 +122,9 @@ def _load_config_data(
         if not config_path.exists():
             raise FileNotFoundError(f"Specified config file not found: {config_path}")
         # Read specific file, can be dict (if config file) or any other type (if custom engine)
-        data: dict | DataFrame = _Reader(str(config_path), custom_engine=custom_engine).read()
+        data: dict | DataFrame = _Reader(
+            str(config_path), custom_engine=custom_engine
+        ).read()
         # If data is a DataFrame, wrap it in a dict to standardize output
         if isinstance(data, DataFrame):
             data = {config_path.stem: data}
@@ -151,10 +155,12 @@ def _load_config_data(
 
                 if kname in data:
                     # TODO: Only raise warning and adjust kname by file extension
-                    raise ValueError(f"Duplicate key {kname!r} found in config files."
-                                     f"Filenames interfers with key from other config file."
-                                     f"Consider renaming the file when using a custom engine.")
-                
+                    raise ValueError(
+                        f"Duplicate key {kname!r} found in config files."
+                        f"Filenames interfers with key from other config file."
+                        f"Consider renaming the file when using a custom engine."
+                    )
+
                 tmp_data = {kname: tmp_data}
 
             # If file is empty, skip it
@@ -274,7 +280,12 @@ def spool(
         return decorator(_func)
 
 
-def spool_asset(_func: callable = None, *, file: str = None, custom_engine: callable = None,):
+def spool_asset(
+    _func: callable = None,
+    *,
+    file: str = None,
+    custom_engine: callable = None,
+):
     """
     A wrapper for 'spool' that reads from a pre-configured asset path.
     The path can be set globally via processflow.set_option("asset_path", ...).

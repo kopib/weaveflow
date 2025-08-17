@@ -13,7 +13,11 @@ def _is_refine(f: Callable) -> bool:
 
 
 def refine(
-    _func: Callable = None, *, description: str = None, on_method: str = None, params_from: Any = None
+    _func: Callable = None,
+    *,
+    description: str = None,
+    on_method: str = None,
+    params_from: Any = None,
 ) -> Callable:
     """
     A smart decorator for DataFrame transformation tasks.
@@ -22,7 +26,7 @@ def refine(
     - If applied to a class, it automatically calls a specified method
       (default 'run') upon instantiation and returns the result.
     """
-        
+
     ParamsFromIsNotASpoolError(params_from)
 
     # Capture the on_method from the arguments passed to refine
@@ -32,7 +36,7 @@ def refine(
 
         if _is_refine(func_or_class):
             return func_or_class
-        
+
         params = dump_object_to_dict(params_from)
 
         # Define meta data class for refine decorator

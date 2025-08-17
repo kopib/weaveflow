@@ -44,16 +44,18 @@ class _ConfigReader:
     def __pre__init__(self, path: Path | str) -> None:
         if not isinstance(path, (Path, str)):
             raise TypeError("Path must be a string or a pathlib.Path object.")
-    
+
     @staticmethod
-    def _extend_engines(default_engine: dict[str, callable], custom_engine: dict[str, callable]) -> None:
+    def _extend_engines(
+        default_engine: dict[str, callable], custom_engine: dict[str, callable]
+    ) -> None:
         """Extend the default engine with custom engines."""
         for ext, reader in custom_engine.items():
             if not isinstance(ext, str):
                 raise TypeError(f"Extension must be a string, got {ext}.")
             if not isinstance(reader, Callable):
                 raise TypeError(f"Reader must be a callable, got {reader}.")
-                
+
             if not ext.startswith("."):
                 ext = f".{ext}"
 
@@ -61,7 +63,9 @@ class _ConfigReader:
 
         return default_engine
 
-    def __init__(self, path: Path | str, custom_engine: dict[str, callable] = None) -> None:
+    def __init__(
+        self, path: Path | str, custom_engine: dict[str, callable] = None
+    ) -> None:
         self.path = path
         self.extension = Path(path).suffix.lower()
         _engines = {
