@@ -23,7 +23,7 @@ class _WeaveGraph(ABC):
         pass
 
 
-class Tapestry(_WeaveGraph):
+class WeaveGraph(_WeaveGraph):
     """Object to create a final graph for a given pandas weave."""
 
     def __init__(self, weave: Loom):
@@ -203,6 +203,6 @@ class Tapestry(_WeaveGraph):
         return g
 
 
-class WeaveGraph(Tapestry):
+class Tapestry(WeaveGraph):
     def __init__(self, weave: Loom):
         super().__init__(weave)

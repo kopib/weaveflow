@@ -214,7 +214,7 @@ def test_unknown_optional_argument(base_dataframe_input: pd.DataFrame):
         loom.database["modified_unknown"],
         base_dataframe_input["col1"] + base_dataframe_input["col2"] + 2,
         check_names=False,
-        )
+    )
 
     loom = Loom(database=base_dataframe_input, tasks=[add_columns], known=2)
     loom.run()
@@ -222,22 +222,24 @@ def test_unknown_optional_argument(base_dataframe_input: pd.DataFrame):
         loom.database["modified_unknown"],
         base_dataframe_input["col1"] + base_dataframe_input["col2"] + 4,
         check_names=False,
-        )
-    
-    loom = Loom(database=base_dataframe_input, tasks=[add_columns], optionals={"unknown": 2})
+    )
+
+    loom = Loom(
+        database=base_dataframe_input, tasks=[add_columns], optionals={"unknown": 2}
+    )
     loom.run()
     pd.testing.assert_series_equal(
         loom.database["modified_unknown"],
         base_dataframe_input["col1"] + base_dataframe_input["col2"] + 2,
         check_names=False,
-        )
+    )
 
 
 def test_error_on_unknown_task_type(base_dataframe_input: pd.DataFrame):
     """Tests handling of unknown task type."""
 
     def unknown_task(col1: int):
-        return col1 ** 2
+        return col1**2
 
     with pytest.raises(TypeError):
         Loom(database=base_dataframe_input, tasks=[unknown_task])
