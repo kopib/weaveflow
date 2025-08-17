@@ -185,14 +185,14 @@ class Loom(PandasWeave):
     def __init__(
         self,
         database: pd.DataFrame,
-        weave_tasks: Iterable[callable],
+        tasks: Iterable[callable],
         weaveflow_name: str = "default",
         optionals: dict[str, dict[str]] = None,
         **kwargs,
     ):
-        all_tasks = list(weave_tasks)
+        all_tasks = list(tasks)
         # Filter only weave tasks
-        filtered_weave_tasks = [task for task in weave_tasks if _is_weave(task)]
+        filtered_weave_tasks = [task for task in tasks if _is_weave(task)]
         # TODO: Rename weave_tasks to tasks
         # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.
         super().__init__(
@@ -200,13 +200,14 @@ class Loom(PandasWeave):
         )
         self.tasks = all_tasks  # All tasks
         self.refine_collector = defaultdict(dict)
+        self.__pre_init__()
 
     @override
     def __pre_init__(self):
         """Pre-initialization checks."""
         if not isinstance(self.tasks, Iterable):
             raise TypeError("'tasks' must be a Iterable of callables")
-        for task in self.weave_tasks:
+        for task in self.tasks:
             if not (_is_weave(task) or _is_refine(task)):
                 raise TypeError(
                     f"Argument 'weave_tasks' contains a non-weave and non-refine task: {task!r}"

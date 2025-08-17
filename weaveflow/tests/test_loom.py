@@ -31,6 +31,7 @@ def margin_scaled(col1: pd.Series, scaler: int = 1, margin: int = 0):
 
 
 def test_weave_decorator_attributes():
+    """Tests weave decorator attributes."""
 
     assert _is_weave(add_columns)
     assert _is_weave(scale_sum)
@@ -51,10 +52,11 @@ def test_weave_decorator_attributes():
 
 
 def test_error_on_non_weave(base_dataframe_input):
+    """Tests handling of non-weave tasks."""
 
     # Raise KeyError if some required arguments are not found in database for `Loom`
     with pytest.raises(KeyError):
-        Loom(database=base_dataframe_input, weave_tasks=[calculate_stats]).run()
+        Loom(database=base_dataframe_input, tasks=[calculate_stats]).run()
 
     def invalid_inputs_weave(col1: pd.Series):
         return col1 + 1
@@ -85,7 +87,7 @@ def test_error_on_non_weave(base_dataframe_input):
 def test_weave_runs(base_dataframe, base_dataframe_input, weave_func):
     """Tests weave 'add_columns' and 'subtract_columns' one-by-one."""
     # 'weave_func' is now the actual function object
-    loom = Loom(database=base_dataframe_input, weave_tasks=[weave_func])
+    loom = Loom(database=base_dataframe_input, tasks=[weave_func])
     loom.run()
     meta = getattr(weave_func, "_weave_meta")
     expected_df = base_dataframe[meta._rargs + meta._outputs]
@@ -97,7 +99,7 @@ def test_weave_with_multiple_outputs(base_dataframe, base_dataframe_input):
     # Test whole weave
     loom = Loom(
         database=base_dataframe_input,
-        weave_tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
+        tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
     )
     loom.run()
     pd.testing.assert_frame_equal(loom.database, base_dataframe)
@@ -122,7 +124,7 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
     optionals = {calculate_stats: {"margin": margin}, "scale_sum": {"scaler": scaler}}
     loom = Loom(
         database=base_dataframe_input,
-        weave_tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
+        tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
         optionals=optionals,
     )
     loom.run()
@@ -133,7 +135,7 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
     # Define optionals arg for 'Loom' via kwargs
     loom = Loom(
         database=base_dataframe_input,
-        weave_tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
+        tasks=[add_columns, subtract_columns, calculate_stats, scale_sum],
         margin=margin,
         scaler=scaler,
     )
@@ -148,7 +150,7 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
     # Define optionals arg for 'Loom' via kwargs and optionals dict
     loom = Loom(
         database=base_dataframe_input,
-        weave_tasks=[
+        tasks=[
             add_columns,
             subtract_columns,
             calculate_stats,
@@ -167,10 +169,11 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
 
 
 def test_rethread(base_dataframe_input: pd.DataFrame):
+    """Tests rethread function arguments."""
 
     meta = {"col1": "diff", "col2": "sum"}
     calculate_stats_t = rethread(calculate_stats, meta=meta)
-    loom = Loom(database=base_dataframe_input, weave_tasks=[calculate_stats_t])
+    loom = Loom(database=base_dataframe_input, tasks=[calculate_stats_t])
     loom.run()
 
     assert (
@@ -183,3 +186,58 @@ def test_rethread(base_dataframe_input: pd.DataFrame):
     expected_df["div"] = (expected_df["col2"] / expected_df["col1"]).astype(int)
 
     pd.testing.assert_frame_equal(loom.database, expected_df)
+
+
+def test_unknown_required_argument(base_dataframe_input: pd.DataFrame):
+    """Tests handling of unknown required arguments."""
+
+    @weave(outputs="doubled_unknown")
+    def add_columns(unknown: int):
+        return unknown * 2
+
+    with pytest.raises(KeyError):
+        Loom(database=base_dataframe_input, tasks=[add_columns]).run()
+
+
+def test_unknown_optional_argument(base_dataframe_input: pd.DataFrame):
+    """Tests handling of optional arguments."""
+
+    @weave(outputs="modified_unknown")
+    def add_columns(col1: int, col2: int, known: int = 1):
+        return col1 + col2 + known * 2
+
+    # Make sure no error is raised if unknown optional argument is provided
+    loom = Loom(database=base_dataframe_input, tasks=[add_columns], unknown=2)
+    loom.run()
+
+    pd.testing.assert_series_equal(
+        loom.database["modified_unknown"],
+        base_dataframe_input["col1"] + base_dataframe_input["col2"] + 2,
+        check_names=False,
+        )
+
+    loom = Loom(database=base_dataframe_input, tasks=[add_columns], known=2)
+    loom.run()
+    pd.testing.assert_series_equal(
+        loom.database["modified_unknown"],
+        base_dataframe_input["col1"] + base_dataframe_input["col2"] + 4,
+        check_names=False,
+        )
+    
+    loom = Loom(database=base_dataframe_input, tasks=[add_columns], optionals={"unknown": 2})
+    loom.run()
+    pd.testing.assert_series_equal(
+        loom.database["modified_unknown"],
+        base_dataframe_input["col1"] + base_dataframe_input["col2"] + 2,
+        check_names=False,
+        )
+
+
+def test_error_on_unknown_task_type(base_dataframe_input: pd.DataFrame):
+    """Tests handling of unknown task type."""
+
+    def unknown_task(col1: int):
+        return col1 ** 2
+
+    with pytest.raises(TypeError):
+        Loom(database=base_dataframe_input, tasks=[unknown_task])
