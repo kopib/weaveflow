@@ -52,11 +52,11 @@ class DataCleaner:
     def clean(self):
         self.df = self.df.dropna()
         return self.df
-    
+
 
 class DataCleanerStatic:
-    
-    @refine # Also works for static methods
+
+    @refine  # Also works for static methods
     @staticmethod
     def clean(df: DataFrame):
         return df.dropna()
@@ -92,16 +92,13 @@ def test_weave_spool_basics():
     }
 
 
-@pytest.mark.parametrize(
-    "refiner_task", 
-    [DataCleaner, DataCleanerStatic.clean]
-)
+@pytest.mark.parametrize("refiner_task", [DataCleaner, DataCleanerStatic.clean])
 def test_consistency_in_refiner(personal_data, refiner_task):
 
     # Define expected loom using `clean_data` refiner
     expected_loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data])
     expected_loom.run()
-    
+
     loom_to_test = Loom(personal_data, [get_total_costs, get_surplus, refiner_task])
     loom_to_test.run()
 
@@ -166,8 +163,8 @@ def test_loomflow_with_several_refiners(personal_data):
             [83436.25, 55116.25, 93725.0, 103340.0, 58532.5],
             index=Index(
                 data=["Berlin", "Cologne", "Frankfurt", "Hamburg", "Munich"],
-                name="city"
+                name="city",
             ),
-            name="surplus"
-        )
+            name="surplus",
+        ),
     )
