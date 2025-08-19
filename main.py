@@ -25,7 +25,7 @@ def generate_data(seed: int = 42, num_companies: int = 50):
         "company_name": company_names,
         "ticker": tickers,
         "industry": np.random.choice(industries, num_companies, p=[0.3, 0.2, 0.2, 0.3]),
-        "current_price": np.round(np.random.uniform(50, 500, num_companies), 1),
+        "current_price": np.round(np.random.uniform(1, 200, num_companies), 1),
         "market_cap_billions": np.round(np.random.uniform(10, 800, num_companies), 1),
         "pe_ratio": np.round(np.random.uniform(15, 60, num_companies), 1),
         "pb_ratio": np.round(np.random.uniform(2, 15, num_companies), 1),
@@ -75,28 +75,32 @@ class MarketData:
 @wf.spool_asset(custom_engine={"csv": pd.read_csv})
 @dataclass
 class AnalystRatings:
-    analyst_ratings_registry: dict[str, pd.DataFrame] # name corresponds to filestem
+    analyst_ratings_registry: dict[str, pd.DataFrame]  # name corresponds to filestem
 
 
 @wf.spool_asset(custom_engine={"csv": pd.read_csv})
 @dataclass
 class IndustryMetrics:
-    industry_metrics_registry: dict[str, pd.DataFrame] # name corresponds to filestem
+    industry_metrics_registry: dict[str, pd.DataFrame]  # name corresponds to filestem
 
 
-@wf.spool_asset(file="cap_pe_registry.yaml") # specific file for demonstration purpose, not necessary
+@wf.spool_asset(
+    file="cap_pe_registry.yaml"
+)  # specific file for demonstration purpose, not necessary
 @dataclass
 class CapPERegistry:
-    pe_caps: dict[str, float] # remember: name corresponds to key in the YAML file unless it is a custom engine
+    pe_caps: dict[
+        str, float
+    ]  # remember: name corresponds to key in the YAML file unless it is a custom engine
 
 
 @wf.weave(outputs=["rf_rate", "erp", "betas"], params_from=MarketData)
 def get_market_data(
-    industry: str, 
-    risk_free_rate: float, 
+    industry: str,
+    risk_free_rate: float,
     equity_risk_premium: float,
-    industry_betas: dict[str, float], 
-    ) -> tuple[Any, ...]:
+    industry_betas: dict[str, float],
+) -> tuple[Any, ...]:
 
     return (
         risk_free_rate,
@@ -107,33 +111,25 @@ def get_market_data(
 
 @wf.weave(outputs=["analyst_rating", "price_target"], params_from=AnalystRatings)
 def get_analyst_ratings(
-    ticker: str, 
-    analyst_ratings_registry: pd.DataFrame, 
-    ) -> tuple[Any, ...]:
-    rslt = pd.merge(
-        ticker, 
-        analyst_ratings_registry, 
-        on="ticker", 
-        how="left"
-        )
-    
+    ticker: str,
+    analyst_ratings_registry: pd.DataFrame,
+) -> tuple[Any, ...]:
+    rslt = pd.merge(ticker, analyst_ratings_registry, on="ticker", how="left")
+
     # TODO: Make rslt return work, handle pd.DataFrame output as well
     # TODO: if columns from data frame exists in the database, ignore them
     # TODO: It is annyoing for the user to return as tuple
     return rslt["analyst_rating"], rslt["price_target"]
 
 
-@wf.weave(outputs=["average_pe_ratio", "average_dividend_yield"], params_from=IndustryMetrics)
+@wf.weave(
+    outputs=["average_pe_ratio", "average_dividend_yield"], params_from=IndustryMetrics
+)
 def get_industry_metrics(
-    industry: str, 
-    industry_metrics_registry: pd.DataFrame, 
-    ) -> tuple[Any, ...]:
-    rslt = pd.merge(
-        industry, 
-        industry_metrics_registry, 
-        on="industry", 
-        how="left"
-        )
+    industry: str,
+    industry_metrics_registry: pd.DataFrame,
+) -> tuple[Any, ...]:
+    rslt = pd.merge(industry, industry_metrics_registry, on="industry", how="left")
     return rslt["average_pe_ratio"], rslt["average_dividend_yield"]
 
 
@@ -147,7 +143,9 @@ class DataPreprocessor:
 
     def _remove_missing_values(self):
         """Drops rows with any NaN values."""
-        self.df.dropna(subset=['pe_ratio'], inplace=True) # Only drop if pe_ratio is missing
+        self.df.dropna(
+            subset=["pe_ratio"], inplace=True
+        )  # Only drop if pe_ratio is missing
 
     def _cap_pe_by_industry(self):
         """Filters out companies with P/E ratios above their industry's cap."""
@@ -161,13 +159,104 @@ class DataPreprocessor:
         self._remove_missing_values()
         self._cap_pe_by_industry()
         return self.df
-        
+
+
+@wf.weave("cost_of_equity")
+def calculate_cost_of_equity(rf_rate: float, erp: float, betas: float) -> float:
+    return rf_rate + betas * erp
+
+
+@wf.weave("cost_of_debt")
+def cost_of_debt(rf_rate: float, addon: float = 1.5) -> float:
+    return rf_rate + addon
+
+
+@wf.weave("wacc")
+def calculate_wacc(
+    market_cap_billions: float,
+    debt_to_equity: float,
+    cost_of_equity: float,
+    cost_of_debt: float,
+    tax_rate: float = 0.25,
+) -> float:
+    return market_cap_billions * cost_of_equity + market_cap_billions * debt_to_equity * cost_of_debt * (1 - tax_rate)
+
+
+@wf.spool_asset
+@dataclass
+class GrowthRates:
+    growth_rates: dict[str, float]
+
+
+@wf.weave(["fair_value_dfc", "discount"], params_from=GrowthRates)
+def discounted_cashflow_model(
+    current_price: float,
+    free_cash_flow_millions: pd.Series,
+    industry: pd.Series,
+    wacc: pd.Series,
+    growth_rates: dict[str, float],
+    n: int = 20,
+) -> pd.Series:
+
+    growth_ratio = industry.map(growth_rates)
+    years = np.arange(1, n + 1)
+
+    # Calculate future cash flows (as before)
+    cumulative_growth_matrix = np.power((1 + growth_ratio).values[:, np.newaxis], years)
+    future_cash_flows = pd.DataFrame(
+        free_cash_flow_millions.values[:, np.newaxis] * cumulative_growth_matrix,
+        index=free_cash_flow_millions.index,
+        columns=[f"FCF_Year_{i}" for i in years]
+    )
+
+    # Note: `wacc` must be a Series with the same index as the companies
+    discount_factors = 1 / np.power((1 + wacc).values[:, np.newaxis], years)
+
+    # Pandas broadcasts the discount_factors correctly across the rows
+    present_values = future_cash_flows * discount_factors
+
+    # Sum the present values row-wise to get the total for each company
+    sum_of_present_values = present_values.sum(axis=1)
+
+    # This sum represents the value of the company based on the projected
+    # cash flows (before adding a terminal value).
+    return sum_of_present_values, sum_of_present_values - current_price
+ 
+
+@wf.refine
+class UndervaluedData:
+
+    def __init__(self, df: pd.DataFrame, margin_of_safety: float = 0.05):
+        self.df = df
+        self.margin_of_safety = margin_of_safety
+
+    def _get_undervalued(self) -> pd.DataFrame:
+        """Get undervalued companies with margin of safety."""
+        m = self.df["fair_value_dfc"] * (1 - self.margin_of_safety) < self.df["current_price"]
+        return self.df[m]
+
+    def run(self) -> pd.DataFrame:
+        """Get top undervalued company per industry."""
+        self.df = self.df.sort_values(by="discount", ascending=True)
+        self.df = self._get_undervalued()
+        return self.df.groupby("industry").head(1)
 
 
 if __name__ == "__main__":
     df = generate_data(num_companies=100)
 
-    loomer = wf.Loom(df, [get_market_data, get_analyst_ratings, get_industry_metrics, DataPreprocessor])
+    loomer = wf.Loom(
+        df,
+        [
+            get_market_data,
+            get_analyst_ratings,
+            get_industry_metrics,
+            DataPreprocessor,
+            calculate_cost_of_equity,
+            cost_of_debt,
+            calculate_wacc,
+            discounted_cashflow_model,
+            UndervaluedData
+        ],
+    )
     loomer.run()
-
-    print(loomer.database.head())
