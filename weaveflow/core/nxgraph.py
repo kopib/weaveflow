@@ -92,12 +92,6 @@ class WeaveGraph(_BaseGraph):
 
         for fn, vals in self.weave_collector[weaveflow_name].items():
 
-            print(fn)
-
-            # Skip refined tasks
-            # if vals.get("_refine", False):
-            #     continue
-
             # Get all relevant nodes
             outputs = vals["outputs"]
             rargs = vals["rargs"]

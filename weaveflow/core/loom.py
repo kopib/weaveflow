@@ -222,7 +222,7 @@ class Loom(PandasWeave):
         """
         # Get the meta information from refine object
         refine_meta = getattr(refine_task, "_refine_meta")
-        self.weave_collector[self.weaveflow_name][
+        self.refine_collector[self.weaveflow_name][
             refine_meta._refine_name
         ] = refine_meta.__dict__
         # Run calculation and build the graph
