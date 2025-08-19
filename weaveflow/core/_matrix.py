@@ -37,6 +37,10 @@ class WeaveMatrix:
         rows = sorted(row_names)
         cols = sorted(self._tasks.keys())
 
+        # If nothing to show, return a truly empty DataFrame (RangeIndex for index/columns)
+        if not rows and not cols:
+            return pd.DataFrame()
+
         # Build column-wise data
         data: dict[str, list[str]] = {}
         for task_name in cols:
