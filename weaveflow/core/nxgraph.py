@@ -4,6 +4,7 @@ import graphviz
 
 import networkx as nx
 from weaveflow.core.loom import Loom, _BaseWeave
+from weaveflow.core._matrix import WeaveMatrix
 
 
 def _get_graph_attr(attrs: dict[str, str] = None):
@@ -198,7 +199,23 @@ class WeaveGraph(_BaseGraph):
                 list(clrs.values()),
             )
 
-        return g
+    def build_matrix(self) -> WeaveMatrix:
+        """Construct and return a WeaveMatrix for the current weaveflow.
+
+        The matrix is built only from weave tasks. If refine entries exist in
+        the weave_collector (due to upstream population), they are filtered out
+        by requiring the presence of the "outputs" key.
+        """
+        weaveflow_name = self.loom.weaveflow_name
+        task_collection = self.weave_collector.get(weaveflow_name, {})
+        # Filter to weave-only entries expected by WeaveMatrix
+        weave_only = {
+            name: vals
+            for name, vals in task_collection.items()
+            if isinstance(vals, dict) and "outputs" in vals
+        }
+        return WeaveMatrix(weave_only).build()
+
 
 
 class RefineGraph(_BaseGraph):
