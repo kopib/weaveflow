@@ -115,8 +115,8 @@ def test_weave_matrix_multiple_tasks_with_overlap():
 
 
 def test_weave_matrix_precedence_input_vs_output_same_name():
-    # If a name is both an input and an output for the same task, "required input" should win,
-    # followed by "optional input", then "Output" (according to the implementation order).
+    # If a name is both an input and an output for the same task, combine labels
+    # as "required input / Output" or "optional input / Output".
     task_collection = {
         "t1": {
             "rargs": ["x"],
@@ -129,7 +129,8 @@ def test_weave_matrix_precedence_input_vs_output_same_name():
 
     # Rows sorted: x, y, z
     expected = pd.DataFrame(
-        {"t1": ["required input", "optional input", "Output"]}, index=["x", "y", "z"]
+        {"t1": ["required input / Output", "optional input / Output", "Output"]},
+        index=["x", "y", "z"],
     )
     assert_frame_equal(df, expected)
 

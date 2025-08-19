@@ -11,6 +11,8 @@ class WeaveMatrix:
         * "required input" if argument is a required input of the task
         * "optional input" if argument is an optional input of the task
         * "Output" if argument is produced by the task
+        * "required input / output" if required input and output for same task
+        * "optional input / output" if optional input and output for same task
         * "" otherwise
 
     Note:
@@ -50,11 +52,19 @@ class WeaveMatrix:
 
             col_values: list[str] = []
             for arg in rows:
-                if arg in rargs:
+                is_req = arg in rargs
+                is_opt = arg in oargs
+                is_out = arg in outputs
+
+                if is_req and is_out:
+                    col_values.append("required input / Output")
+                elif is_opt and is_out:
+                    col_values.append("optional input / Output")
+                elif is_req:
                     col_values.append("required input")
-                elif arg in oargs:
+                elif is_opt:
                     col_values.append("optional input")
-                elif arg in outputs:
+                elif is_out:
                     col_values.append("Output")
                 else:
                     col_values.append("")
