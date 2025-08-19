@@ -1,20 +1,77 @@
 from abc import ABC, abstractmethod
 from typing import Union
+import graphviz
 
 import networkx as nx
 from weaveflow.core.loom import Loom, _BaseWeave
 
 
-class _WeaveGraph(ABC):
-    """Abstract base class for all krystallizer weave graphs."""
+def _get_graph_attr(attrs: dict[str, str] = None):
+    """Get graph attributes with optional overrides."""
+    graph_attr = {
+            "rankdir": "LR",
+            "nodesep": "0.2",
+            "ranksep": "1.0",
+            "fontname": "Helvetica",
+            "fontsize": "10",
+            "concentrate": "true",
+        }
+    return graph_attr | (attrs or {})
 
-    def __init__(self, weave: _BaseWeave):
-        """Create a graph for a given weave.
+
+def _add_graph_nodes(graph: nx.DiGraph, nodes: Union[str, list[str]], **attrs) -> None:
+    """Updates edges in graph. Throws an error if a key is present and values don't match.
 
         Args:
-            weave (_BaseWeave): Weave to create graph for.
+            graph (network.DiGraph): Graph to be updated.
+            nodes (str, list): Node(s) to be updated
+            **attrs: Attributes(s)
         """
-        self.weave = weave
+    if isinstance(nodes, (list, tuple)):
+        for node in nodes:
+            _add_graph_nodes(graph, node, **attrs)
+        return
+
+    node = nodes
+
+    # If argument label changed, assign required (or hybrid) color
+    if node in graph.nodes:
+        if graph.nodes[node] != attrs:
+            graph.add_node(node, type="arg_req")
+    else:
+        graph.add_node(node, **attrs)
+
+
+def _set_graph_legend(graph: graphviz.Digraph, names: list[str], colors: list[str]) -> graphviz.Digraph:
+    with graph.subgraph(name="cluster_legend") as c:
+        c.attr(
+            label="<<b>Legend</b>>",
+            fontsize="12",
+            color="black",
+            style="rounded",
+            nodesep="0.15",
+            ranksep="0.01",
+            padding="0.05",
+        )
+        for name, color in zip(names, colors):
+            c.node(
+                name,
+                shape="box",
+                style="filled",
+                fillcolor=color,
+                height="0.12",
+                fontsize="10",
+            )
+
+    return graph
+        
+
+class _BaseGraph(ABC):
+    """Abstract base class for all weaveflow graphs."""
+
+    def __init__(self, loom: Loom):
+        """Create a graph for a given weaveflow."""
+        self.loom = loom
         self.graph = nx.DiGraph()
 
     @abstractmethod
@@ -23,41 +80,23 @@ class _WeaveGraph(ABC):
         pass
 
 
-class WeaveGraph(_WeaveGraph):
-    """Object to create a final graph for a given pandas weave."""
+class WeaveGraph(_BaseGraph):
+    """Object to create a final graph for a given pandas weaveflow."""
 
-    def __init__(self, weave: Loom):
-        super().__init__(weave)
-        # TODO: Think about whether to use a dataclass here and whether to put into abstract class
-        self.weave_collector = weave.weave_collector
+    def __init__(self, loom: Loom):
+        super().__init__(loom)
+        self.weave_collector = loom.weave_collector
 
-    @staticmethod
-    def _add_weave_nodes(graph: nx.DiGraph, nodes: Union[str, list[str]], **attrs):
-        """Updates edges in graph. Throws an error if a key is present and values don't match.
-
-        Args:
-            graph (network.DiGraph): Graph to be updated.
-            nodes (str, list): Node(s) to be updated
-            **attrs: Attributes(s)
-        """
-        if isinstance(nodes, (list, tuple)):
-            for node in nodes:
-                Tapestry._add_weave_nodes(graph, node, **attrs)
-            return
-
-        node = nodes
-
-        # If argument label changed, assign required (or hybrid) color
-        if node in graph.nodes:
-            if graph.nodes[node] != attrs:
-                graph.add_node(node, type="arg_req")
-        else:
-            graph.add_node(node, **attrs)
-
-    def _setup(self, weave_name: str):
+    def _setup(self, weaveflow_name: str):
         """Create graph by adding all relevant nodes and edges."""
 
-        for fn, vals in self.weave_collector[weave_name].items():
+        for fn, vals in self.weave_collector[weaveflow_name].items():
+
+            print(fn)
+
+            # Skip refined tasks
+            # if vals.get("_refine", False):
+            #     continue
 
             # Get all relevant nodes
             outputs = vals["outputs"]
@@ -66,11 +105,11 @@ class WeaveGraph(_WeaveGraph):
             params = vals["params"]
 
             # Assign node types to access them later
-            self._nx_add_nodes_checking(self.graph, fn, type="suture")
-            self._nx_add_nodes_checking(self.graph, outputs, type="outputs")
-            self._nx_add_nodes_checking(self.graph, rargs, type="arg_req")
-            self._nx_add_nodes_checking(self.graph, params, type="arg_param")
-            self._nx_add_nodes_checking(self.graph, oargs, type="arg_opt")
+            _add_graph_nodes(self.graph, fn, type="weave")
+            _add_graph_nodes(self.graph, outputs, type="outputs")
+            _add_graph_nodes(self.graph, rargs, type="arg_req")
+            _add_graph_nodes(self.graph, params, type="arg_param")
+            _add_graph_nodes(self.graph, oargs, type="arg_opt")
 
             # Add edges
             self.graph.add_edges_from([(v, fn) for v in rargs])
@@ -85,7 +124,7 @@ class WeaveGraph(_WeaveGraph):
         mindist: float = 1.2,
         legend: bool = True,
     ):
-        """Plots final graph for a given weave.
+        """Plots final graph for a given weaveflow.
 
         Args:
             size (int): Size of figure. Defaults to 12.
@@ -96,30 +135,21 @@ class WeaveGraph(_WeaveGraph):
         Returns:
             graphviz.Digraph: Plotted graph.
         """
-        import graphviz
-
-        self._setup(self.weave.weave_name)
+        self._setup(self.loom.weaveflow_name)
 
         clrs = {
-            "suture": "#9999ff",
+            "weave": "#9999ff",
             "arg_req": "#f08080",
             "arg_opt": "#99ff99",
             "outputs": "#fbec5d",
             "arg_param": "#ffb6c1",
         }
         # Define attributes for final directed graph
-        size_str = f"{size},{size}!"
-        graph_attr = {
-            "rankdir": "LR",
-            "size": size_str,
+        graph_attr = _get_graph_attr({
+            "size": f"{size},{size}!",
             "mindist": str(mindist),
-            "nodesep": "0.2",
-            "label": f"<<b>Graph for weave {self.weave.weave_name!r}</b>>",
-            "ranksep": "1.0",
-            "fontname": "Helvetica",
-            "fontsize": "10",
-            "concentrate": "true",
-        }
+            "label": f"<<b>Graph for weaveflow {self.loom.weaveflow_name!r}</b>>",
+        })
 
         g = graphviz.Digraph(graph_attr=graph_attr)
 
@@ -129,8 +159,8 @@ class WeaveGraph(_WeaveGraph):
             )
 
         for n1, n2 in self.graph.edges():
-            # If left node is suture and produces output
-            if self.graph.nodes[n1]["type"] == "suture" and timer:
+            # If left node is weave and produces output
+            if self.graph.nodes[n1]["type"] == "weave" and timer:
                 # Extract time of function execution
                 dt = self.weave_collector[n1]["time"]
                 # Create edge label (if rounded time equals zero, not print)
@@ -149,60 +179,24 @@ class WeaveGraph(_WeaveGraph):
 
         # Plot legend if specified
         if legend:
-            with g.subgraph(name="cluster_legend") as c:
-                c.attr(
-                    label="<<b>Legend</b>>",
-                    fontsize="12",
-                    color="black",
-                    style="rounded",
-                    nodesep="0.15",
-                    ranksep="0.01",
-                    padding="0.05",
-                )
-                c.node(
-                    "Required Arguments",
-                    shape="box",
-                    style="filled",
-                    fillcolor=clrs["arg_req"],
-                    height="0.12",
-                    fontsize="10",
-                )
-                c.node(
-                    "Optional Arguments",
-                    shape="box",
-                    style="filled",
-                    fillcolor=clrs["arg_opt"],
-                    height="0.12",
-                    fontsize="10",
-                )
-                c.node(
-                    "Suture",
-                    shape="box",
-                    style="filled",
-                    fillcolor=clrs["suture"],
-                    height="0.12",
-                    fontsize="10",
-                )
-                c.node(
-                    "Final Outputs",
-                    shape="box",
-                    style="filled",
-                    fillcolor=clrs["outputs"],
-                    height="0.12",
-                    fontsize="10",
-                )
-                c.node(
-                    "Registry",
-                    shape="box",
-                    style="filled",
-                    fillcolor=clrs["arg_param"],
-                    height="0.12",
-                    fontsize="10",
-                )
+            _set_graph_legend(
+                g, 
+                ["Required Arguments", "Optional Arguments", "Weaves", "Outputs", "SPool Arguments"],
+                list(clrs.values()),
+            )
 
         return g
 
 
-class Tapestry(WeaveGraph):
-    def __init__(self, weave: Loom):
-        super().__init__(weave)
+class RefineGraph(_BaseGraph):
+
+    def __init__(self, loom: Loom):
+        super().__init__(loom)
+        self.refine_collector = loom.refine_collector
+
+        print(self.refine_collector)
+
+    
+
+    def build(self):
+        return 

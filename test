@@ -1,0 +1,80 @@
+digraph {
+	graph [concentrate=true fontname=Helvetica fontsize=10 label=<<b>Graph for weaveflow 'UnderValuedCompanies'</b>> mindist=1.2 nodesep=0.2 rankdir=LR ranksep=1.0 size="12,12!"]
+	get_market_data [fillcolor="#9999ff" height=0.35 shape=box style=filled]
+	rf_rate [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	erp [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	betas [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	industry [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	risk_free_rate [fillcolor="#ffb6c1" height=0.35 shape=box style=filled]
+	equity_risk_premium [fillcolor="#ffb6c1" height=0.35 shape=box style=filled]
+	industry_betas [fillcolor="#ffb6c1" height=0.35 shape=box style=filled]
+	get_analyst_ratings [fillcolor="#9999ff" height=0.35 shape=box style=filled]
+	analyst_rating [fillcolor="#fbec5d" height=0.35 shape=box style=filled]
+	price_target [fillcolor="#fbec5d" height=0.35 shape=box style=filled]
+	ticker [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	analyst_ratings_registry [fillcolor="#ffb6c1" height=0.35 shape=box style=filled]
+	get_industry_metrics [fillcolor="#9999ff" height=0.35 shape=box style=filled]
+	average_pe_ratio [fillcolor="#fbec5d" height=0.35 shape=box style=filled]
+	average_dividend_yield [fillcolor="#fbec5d" height=0.35 shape=box style=filled]
+	industry_metrics_registry [fillcolor="#ffb6c1" height=0.35 shape=box style=filled]
+	calculate_cost_of_equity [fillcolor="#9999ff" height=0.35 shape=box style=filled]
+	cost_of_equity [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	cost_of_debt [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	addon [fillcolor="#99ff99" height=0.35 shape=box style=filled]
+	calculate_wacc [fillcolor="#9999ff" height=0.35 shape=box style=filled]
+	wacc [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	market_cap_billions [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	debt_to_equity [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	tax_rate [fillcolor="#99ff99" height=0.35 shape=box style=filled]
+	discounted_cashflow_model [fillcolor="#9999ff" height=0.35 shape=box style=filled]
+	fair_value_dfc [fillcolor="#fbec5d" height=0.35 shape=box style=filled]
+	discount [fillcolor="#fbec5d" height=0.35 shape=box style=filled]
+	current_price [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	free_cash_flow_millions [fillcolor="#f08080" height=0.35 shape=box style=filled]
+	growth_rates [fillcolor="#ffb6c1" height=0.35 shape=box style=filled]
+	n [fillcolor="#99ff99" height=0.35 shape=box style=filled]
+	get_market_data -> rf_rate
+	get_market_data -> erp
+	get_market_data -> betas
+	rf_rate -> calculate_cost_of_equity
+	rf_rate -> cost_of_debt
+	erp -> calculate_cost_of_equity
+	betas -> calculate_cost_of_equity
+	industry -> get_market_data
+	industry -> get_industry_metrics
+	industry -> discounted_cashflow_model
+	risk_free_rate -> get_market_data
+	equity_risk_premium -> get_market_data
+	industry_betas -> get_market_data
+	get_analyst_ratings -> analyst_rating
+	get_analyst_ratings -> price_target
+	ticker -> get_analyst_ratings
+	analyst_ratings_registry -> get_analyst_ratings
+	get_industry_metrics -> average_pe_ratio
+	get_industry_metrics -> average_dividend_yield
+	industry_metrics_registry -> get_industry_metrics
+	calculate_cost_of_equity -> cost_of_equity
+	cost_of_equity -> calculate_wacc
+	cost_of_debt -> cost_of_debt
+	cost_of_debt -> calculate_wacc
+	addon -> cost_of_debt
+	calculate_wacc -> wacc
+	wacc -> discounted_cashflow_model
+	market_cap_billions -> calculate_wacc
+	debt_to_equity -> calculate_wacc
+	tax_rate -> calculate_wacc
+	discounted_cashflow_model -> fair_value_dfc
+	discounted_cashflow_model -> discount
+	current_price -> discounted_cashflow_model
+	free_cash_flow_millions -> discounted_cashflow_model
+	growth_rates -> discounted_cashflow_model
+	n -> discounted_cashflow_model
+	subgraph cluster_legend {
+		color=black fontsize=12 label=<<b>Legend</b>> nodesep=0.15 padding=0.05 ranksep=0.01 style=rounded
+		"Required Arguments" [fillcolor="#9999ff" fontsize=10 height=0.12 shape=box style=filled]
+		"Optional Arguments" [fillcolor="#f08080" fontsize=10 height=0.12 shape=box style=filled]
+		Weaves [fillcolor="#99ff99" fontsize=10 height=0.12 shape=box style=filled]
+		Outputs [fillcolor="#fbec5d" fontsize=10 height=0.12 shape=box style=filled]
+		"SPool Arguments" [fillcolor="#ffb6c1" fontsize=10 height=0.12 shape=box style=filled]
+	}
+}

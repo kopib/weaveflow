@@ -258,5 +258,13 @@ if __name__ == "__main__":
             discounted_cashflow_model,
             UndervaluedData
         ],
+        weaveflow_name="UnderValuedCompanies"
     )
     loomer.run()
+
+    weave_graph = wf.WeaveGraph(loomer)
+    weave_graph.build() #.render("test", view=True)
+
+    refine_graph = wf.RefineGraph(loomer)
+    # refine_graph.build().render("test", view=True))
+

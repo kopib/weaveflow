@@ -255,9 +255,6 @@ class Loom(PandasWeave):
             elif _is_refine(task):
                 self._run_refine_task(task)
 
-            else:
-                raise TypeError(f"Unknown task type: {task!r}")
-
     @override
     def run(self):
         """Run the loomer on specified database."""
