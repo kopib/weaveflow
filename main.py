@@ -179,7 +179,10 @@ def calculate_wacc(
     cost_of_debt: float,
     tax_rate: float = 0.25,
 ) -> float:
-    return market_cap_billions * cost_of_equity + market_cap_billions * debt_to_equity * cost_of_debt * (1 - tax_rate)
+    return (
+        market_cap_billions * cost_of_equity
+        + market_cap_billions * debt_to_equity * cost_of_debt * (1 - tax_rate)
+    )
 
 
 @wf.spool_asset
@@ -206,7 +209,7 @@ def discounted_cashflow_model(
     future_cash_flows = pd.DataFrame(
         free_cash_flow_millions.values[:, np.newaxis] * cumulative_growth_matrix,
         index=free_cash_flow_millions.index,
-        columns=[f"FCF_Year_{i}" for i in years]
+        columns=[f"FCF_Year_{i}" for i in years],
     )
 
     # Note: `wacc` must be a Series with the same index as the companies
@@ -221,7 +224,7 @@ def discounted_cashflow_model(
     # This sum represents the value of the company based on the projected
     # cash flows (before adding a terminal value).
     return sum_of_present_values, sum_of_present_values - current_price
- 
+
 
 @wf.refine
 class UndervaluedData:
@@ -232,7 +235,10 @@ class UndervaluedData:
 
     def _get_undervalued(self) -> pd.DataFrame:
         """Get undervalued companies with margin of safety."""
-        m = self.df["fair_value_dfc"] * (1 - self.margin_of_safety) < self.df["current_price"]
+        m = (
+            self.df["fair_value_dfc"] * (1 - self.margin_of_safety)
+            < self.df["current_price"]
+        )
         return self.df[m]
 
     def run(self) -> pd.DataFrame:
@@ -256,15 +262,14 @@ if __name__ == "__main__":
             cost_of_debt,
             calculate_wacc,
             discounted_cashflow_model,
-            UndervaluedData
+            UndervaluedData,
         ],
-        weaveflow_name="UnderValuedCompanies"
+        weaveflow_name="UnderValuedCompanies",
     )
     loomer.run()
 
     weave_graph = wf.WeaveGraph(loomer)
-    weave_graph.build() #.render("test", view=True)
+    weave_graph.build()  # .render("test", view=True)
 
     refine_graph = wf.RefineGraph(loomer)
-    # refine_graph.build().render("test", view=True))
-
+    refine_graph.build().render("test", view=True)

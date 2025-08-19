@@ -9,24 +9,28 @@ from weaveflow.core.loom import Loom, _BaseWeave
 def _get_graph_attr(attrs: dict[str, str] = None):
     """Get graph attributes with optional overrides."""
     graph_attr = {
-            "rankdir": "LR",
-            "nodesep": "0.2",
-            "ranksep": "1.0",
-            "fontname": "Helvetica",
-            "fontsize": "10",
-            "concentrate": "true",
-        }
+        "rankdir": "LR",
+        "nodesep": "0.2",
+        "ranksep": "1.0",
+        "fontname": "Helvetica",
+        "fontsize": "10",
+        "concentrate": "true",
+    }
     return graph_attr | (attrs or {})
 
 
 def _add_graph_nodes(graph: nx.DiGraph, nodes: Union[str, list[str]], **attrs) -> None:
     """Updates edges in graph. Throws an error if a key is present and values don't match.
 
-        Args:
-            graph (network.DiGraph): Graph to be updated.
-            nodes (str, list): Node(s) to be updated
-            **attrs: Attributes(s)
-        """
+    Args:
+        graph (network.DiGraph): Graph to be updated.
+        nodes (str, list): Node(s) to be updated
+        **attrs: Attributes(s)
+    """
+
+    if nodes is None:
+        return
+
     if isinstance(nodes, (list, tuple)):
         for node in nodes:
             _add_graph_nodes(graph, node, **attrs)
@@ -42,7 +46,9 @@ def _add_graph_nodes(graph: nx.DiGraph, nodes: Union[str, list[str]], **attrs) -
         graph.add_node(node, **attrs)
 
 
-def _set_graph_legend(graph: graphviz.Digraph, names: list[str], colors: list[str]) -> graphviz.Digraph:
+def _set_graph_legend(
+    graph: graphviz.Digraph, names: list[str], colors: list[str]
+) -> graphviz.Digraph:
     with graph.subgraph(name="cluster_legend") as c:
         c.attr(
             label="<<b>Legend</b>>",
@@ -64,7 +70,7 @@ def _set_graph_legend(graph: graphviz.Digraph, names: list[str], colors: list[st
             )
 
     return graph
-        
+
 
 class _BaseGraph(ABC):
     """Abstract base class for all weaveflow graphs."""
@@ -73,6 +79,11 @@ class _BaseGraph(ABC):
         """Create a graph for a given weaveflow."""
         self.loom = loom
         self.graph = nx.DiGraph()
+
+    @abstractmethod
+    def _setup(self):
+        """Method to setup the graph."""
+        pass
 
     @abstractmethod
     def build(self):
@@ -139,11 +150,13 @@ class WeaveGraph(_BaseGraph):
             "arg_param": "#ffb6c1",
         }
         # Define attributes for final directed graph
-        graph_attr = _get_graph_attr({
-            "size": f"{size},{size}!",
-            "mindist": str(mindist),
-            "label": f"<<b>Graph for weaveflow {self.loom.weaveflow_name!r}</b>>",
-        })
+        graph_attr = _get_graph_attr(
+            {
+                "size": f"{size},{size}!",
+                "mindist": str(mindist),
+                "label": f"<<b>Weave Graph for {self.loom.weaveflow_name!r}</b>>",
+            }
+        )
 
         g = graphviz.Digraph(graph_attr=graph_attr)
 
@@ -174,8 +187,14 @@ class WeaveGraph(_BaseGraph):
         # Plot legend if specified
         if legend:
             _set_graph_legend(
-                g, 
-                ["Required Arguments", "Optional Arguments", "Weaves", "Outputs", "SPool Arguments"],
+                g,
+                [
+                    "Required Arguments",
+                    "Optional Arguments",
+                    "Weaves",
+                    "Outputs",
+                    "SPool Arguments",
+                ],
                 list(clrs.values()),
             )
 
@@ -188,9 +207,83 @@ class RefineGraph(_BaseGraph):
         super().__init__(loom)
         self.refine_collector = loom.refine_collector
 
-        print(self.refine_collector)
+    def _setup(self, weaveflow_name: str):
 
-    
+        refine_collector = self.refine_collector[weaveflow_name]
 
-    def build(self):
-        return 
+        # Add nodes and edges for each refine task
+        for fn, vals in refine_collector.items():
+
+            params = vals["params"]
+            params_object = vals["params_object"]
+            # on_method = vals["on_method"]
+            # description = vals["description"]
+
+            _add_graph_nodes(self.graph, fn, type="refine")
+            _add_graph_nodes(self.graph, params, type="arg_param")
+            _add_graph_nodes(self.graph, params_object, type="obj_param")
+            # _add_graph_nodes(self.graph, on_method, type="on_method")
+            # _add_graph_nodes(self.graph, description, type="description")
+
+            # TODO: Integrate description as tooltip
+            # TODO: Intergate on_method argument as label
+            # TODO: Add timer to edges between tasks
+
+            if params:
+                # Add connection between params (config file args) and params_object
+                self.graph.add_edges_from([(v, params_object) for v in params])
+                # Add connection between params_object and refine task
+                self.graph.add_edges_from([(params_object, fn)])
+
+        # Add edges between refine tasks
+        if len(refine_collector) > 1:
+            refine_tasks = list(refine_collector)
+            self.graph.add_edges_from(
+                [(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])]
+            )
+
+    def build(
+        self,
+        size: int = 12,
+        timer: bool = False,
+        mindist: float = 1.2,
+        legend: bool = True,
+    ):
+
+        self._setup(self.loom.weaveflow_name)
+
+        clrs = {
+            "refine": "#9999ff",
+            "obj_param": "#f08080",
+            "arg_param": "#ffb6c1",
+            # "on_method": "#99ff99",
+            # "description": "#fbec5d",
+        }
+        # Define attributes for final directed graph
+        graph_attr = _get_graph_attr(
+            {
+                "size": f"{size},{size}!",
+                "mindist": str(mindist),
+                "label": f"<<b>Refine Graph for {self.loom.weaveflow_name!r}</b>>",
+            }
+        )
+
+        g = graphviz.Digraph(graph_attr=graph_attr)
+
+        for k, v in self.graph.nodes.items():
+            g.node(
+                k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35"
+            )
+
+        for n1, n2 in self.graph.edges():
+            # If left node is weave and produces output
+            g.edge(n1, n2)
+
+        if legend:
+            _set_graph_legend(
+                g,
+                ["Refine Tasks", "SPool Objects", "SPool Arguments"],
+                list(clrs.values()),
+            )
+
+        return g

@@ -38,9 +38,16 @@ def refine(
             return func_or_class
 
         params = dump_object_to_dict(params_from)
+        params_object_name = getattr(params_from, "__name__", None)
 
         # Define meta data class for refine decorator
-        refine_meta = RefineMeta(True, description, func_or_class.__name__)
+        refine_meta = RefineMeta(
+            True,
+            description,
+            func_or_class.__name__,
+            _params=params,
+            _params_object=params_object_name,
+        )
 
         if inspect.isclass(func_or_class):
 
