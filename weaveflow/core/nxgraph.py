@@ -199,6 +199,8 @@ class WeaveGraph(_BaseGraph):
                 list(clrs.values()),
             )
 
+        return g
+
     def build_matrix(self) -> WeaveMatrix:
         """Construct and return a WeaveMatrix for the current weaveflow.
 

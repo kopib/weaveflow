@@ -15,3 +15,12 @@ dependencies = [
     "pyyaml>=6.0.2",
     "tomli>=2.2.1",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "smoke: marks tests as smoke tests (quick subset of tests).",
+    "weavegraph: marks tests related to the WeaveGraph functionality.",
+    "legend: marks tests for the graph legend.",
+    "edges: marks tests for graph edge creation.",
+    "empty: marks tests for handling empty tasks.",
+]
