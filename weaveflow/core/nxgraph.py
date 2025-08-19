@@ -217,7 +217,6 @@ class WeaveGraph(_BaseGraph):
         return WeaveMatrix(weave_only).build()
 
 
-
 class RefineGraph(_BaseGraph):
 
     def __init__(self, loom: Loom):
