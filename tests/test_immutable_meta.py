@@ -142,6 +142,7 @@ def test_rethread_defensive_copy_of_mapping():
     Tests that rethreading a weave task with a meta mapping does not affect
     the original mapping.
     """
+
     # Ensure the meta mapping passed to rethread is defensively copied
     @weave(outputs="y")
     def f(x):

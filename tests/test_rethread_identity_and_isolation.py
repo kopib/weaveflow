@@ -10,6 +10,7 @@ def test_rethread_preserves_identity_and_is_weave():
     """
     Tests that rethread preserves identity and is still a weave task.
     """
+
     @weave(outputs="y")
     def f(x: pd.Series) -> pd.Series:
         """Original docstring."""
@@ -42,6 +43,7 @@ def test_multi_loom_isolation_between_original_and_rethreaded():
     """
     Tests that original and rethreaded tasks can coexist in different Looms.
     """
+
     @weave(outputs=["sum"])  # original names
     def add(a: pd.Series, b: pd.Series) -> pd.Series:
         return a + b

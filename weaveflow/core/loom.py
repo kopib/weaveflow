@@ -126,7 +126,7 @@ class PandasWeave(_BaseWeave):
         """Resolve effective names using meta mapping without renaming the DataFrame.
 
         Returns:
-            tuple[dict, list[str], list[str], list[str]]: A tuple containing 
+            tuple[dict, list[str], list[str], list[str]]: A tuple containing
             the name mapping (name_map, rargs_m, oargs_m, outs_m).
         """
         name_map = weave_meta._meta_mapping or {}
@@ -191,7 +191,9 @@ class PandasWeave(_BaseWeave):
         _, rargs_m, oargs_m, outs_m = self._resolve_effective_names(
             weave_meta, required_args, optional_args, outputs
         )
-        self.check_intersection_columns_dataframe(df=self.database, expected_cols=rargs_m)
+        self.check_intersection_columns_dataframe(
+            df=self.database, expected_cols=rargs_m
+        )
 
         # Build kwargs and execute
         rargs = self._build_required_kwargs(self.database, required_args, rargs_m)
