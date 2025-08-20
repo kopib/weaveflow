@@ -6,7 +6,7 @@ from weaveflow._decorators._spool import (
     _handle_files_from_iterable,
     _load_config_data,
 )
-from weaveflow.tests.data.dummy.dummy import dummy_function
+from tests.data.dummy.dummy import dummy_function
 
 
 def test_handle_elements_from_iterable():
