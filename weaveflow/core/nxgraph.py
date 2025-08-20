@@ -143,6 +143,8 @@ class WeaveGraph(_BaseGraph):
         """
         self._setup(self.loom.weaveflow_name)
 
+        weave_collector = self.weave_collector[self.loom.weaveflow_name]
+
         clrs = {
             "weave": "#9999ff",
             "arg_req": "#f08080",
@@ -170,18 +172,22 @@ class WeaveGraph(_BaseGraph):
             # If left node is weave and produces output
             if self.graph.nodes[n1]["type"] == "weave" and timer:
                 # Extract time of function execution
-                dt = self.weave_collector[n1]["time"]
-                # Create edge label (if rounded time equals zero, not print)
-                label = f" {dt}s" if dt else ""
-                g.edge(
-                    n1,
-                    n2,
-                    label=label,
-                    fontsize="10",
-                    fontname="Helvetica",
-                    labeldistance="0.5",
-                    decorate="False",
+                dt = (
+                    weave_collector[n1]["delta_time"] if n1 in weave_collector else None
                 )
+                label = f"{dt:,.1f}" if dt else None
+                if label:
+                    g.edge(
+                        n1,
+                        n2,
+                        label=label,
+                        fontsize="10",
+                        fontname="Helvetica",
+                        labeldistance="0.5",
+                        decorate="False",
+                    )
+                else:
+                    g.edge(n1, n2)
             else:
                 g.edge(n1, n2)
 

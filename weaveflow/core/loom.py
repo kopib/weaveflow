@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable
 from typing import override
+import time
 import pandas as pd
 
 from weaveflow._decorators._weave import _is_weave
@@ -152,6 +153,7 @@ class PandasWeave(_BaseWeave):
         rargs_m: list[str],
         oargs_m: list[str],
         params: dict,
+        delta_time: float,
     ) -> None:
         """Record metadata about the weave run for downstream graph/matrix."""
         self.weave_collector[self.weaveflow_name][weave_name] = {
@@ -159,6 +161,7 @@ class PandasWeave(_BaseWeave):
             "rargs": rargs_m,
             "oargs": oargs_m,
             "params": list(params),
+            "delta_time": delta_time,
         }
 
     @staticmethod
@@ -194,17 +197,21 @@ class PandasWeave(_BaseWeave):
         self.check_intersection_columns_dataframe(
             df=self.database, expected_cols=rargs_m
         )
-
         # Build kwargs and execute
         rargs = self._build_required_kwargs(self.database, required_args, rargs_m)
+        # Execute with timing for graph edges
+        t0 = time.perf_counter()
+        calculation_output = self._call_weave(weave_task, rargs, oargs, params)
+        dt = time.perf_counter() - t0
+        # Record all relevant information for graph/matrix
         self._record_weave_run(
             weave_name=weave_name,
             outputs_m=outs_m,
             rargs_m=rargs_m,
             oargs_m=oargs_m,
             params=params,
+            delta_time=dt,
         )
-        calculation_output = self._call_weave(weave_task, rargs, oargs, params)
 
         return calculation_output, outs_m, weave_name
 
