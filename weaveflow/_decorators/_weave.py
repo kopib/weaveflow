@@ -115,9 +115,11 @@ def weave(
 
 def rethread(f: callable, meta: dict[str, str] = None) -> callable:
     """
-    Transform the weave task by renaming the required arguments, optional arguments, and outputs.
-    If the function is not a weave task, it will return the function unchanged.
-    If the function is a weave task, it will rename the arguments and outputs according to the meta dictionary.
+    Return a new callable with remapped weave metadata, leaving the original untouched.
+
+    - If 'f' is a weave task, create a thin wrapper that forwards to 'f'
+      but carries a copied _weave_meta with an updated _meta_mapping.
+    - If 'meta' is not a dict, return the original function unmodified.
     """
 
     if not _is_weave(f):
@@ -128,9 +130,14 @@ def rethread(f: callable, meta: dict[str, str] = None) -> callable:
 
     # Get weave meta data from function
     weave_meta = getattr(f, "_weave_meta")
+    # Bind meta data with new meta mapping (defensive copy)
+    new_meta = replace(weave_meta, _meta_mapping=dict(meta))
 
-    # Update meta data with new mapping and store it back to function, overwriting previous meta data
-    weave_meta = replace(weave_meta, _meta_mapping=meta)
-    setattr(f, "_weave_meta", weave_meta)
+    # Return a new callable that forwards to 'f' and carries the new meta
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        return f(*args, **kwargs)
 
-    return f
+    setattr(wrapped, "_weave_meta", new_meta)
+
+    return wrapped

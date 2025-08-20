@@ -5,6 +5,10 @@ from dataclasses import dataclass
 class WeaveMeta:
     """
     Metadata for the Weave decorator.
+
+    This class is frozen (attributes cannot be rebound). To provide strong immutability
+    for inner containers, list/dict attributes are returned as copies when accessed,
+    so external mutation does not affect the stored metadata.
     """
 
     _weave: bool
@@ -13,6 +17,15 @@ class WeaveMeta:
     _outputs: list[str]
     _params: dict[str, str]
     _meta_mapping: dict[str, str] = None
+
+    def __getattribute__(self, name: str):
+        # Intercept container access to return defensive copies
+        val = super().__getattribute__(name)
+        if name in {"_rargs", "_oargs", "_outputs"} and isinstance(val, list):
+            return list(val)
+        if name in {"_params", "_meta_mapping"} and isinstance(val, dict):
+            return dict(val)
+        return val
 
 
 @dataclass(frozen=True)
