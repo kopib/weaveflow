@@ -15,7 +15,7 @@ class WeaveMeta:
     _meta_mapping: dict[str, str] = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class RefineMeta:
     """
     Metadata for the Refine decorator.
