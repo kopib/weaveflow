@@ -101,30 +101,10 @@ class PandasWeave(_BaseWeave):
         calculation_output_frame = self.dump_to_frame(**kwargs)
         self.database = pd.concat([self.database, calculation_output_frame], axis=1)
 
-    @staticmethod
-    def apply_weave_meta_to_df(df: pd.DataFrame, meta: dict) -> pd.DataFrame:
-        if not isinstance(meta, dict):
-            return df
-
-        return df.rename(columns=meta)
-
-    def _optionals_from_kwargs(
-        self, weave_name: str, weave_optionals: list[str]
+    def _collect_optionals_for_task(
+        self, weave_name: str, optional_args: list[str], weave_task: callable
     ) -> dict:
-        for oarg in weave_optionals:
-            if oarg in self.kwargs:
-                self.optionals[weave_name].update({oarg: self.kwargs[oarg]})
-
-    def _run_weave_task(self, weave_task: callable) -> None:
-        # Get the function name
-        weave_name = getattr(weave_task, "__name__")
-        weave_meta = getattr(weave_task, "_weave_meta")
-        # Get the meta information from meta object
-        params = weave_meta._params
-        required_args = weave_meta._rargs
-        optional_args = weave_meta._oargs
-        outputs = weave_meta._outputs
-        # Collect all optional arguments from global setup and task-specific optionals
+        """Collect optional arguments for a weave from global and task-specific sources."""
         oargs = {
             oarg: self.global_optionals[oarg]
             for oarg in optional_args
@@ -134,29 +114,97 @@ class PandasWeave(_BaseWeave):
             weave_task, {}
         )
         oargs.update(task_optionals)
+        return oargs
 
-        # Transform data base based on meta from weave task and define final rargs
-        database_t = self.apply_weave_meta_to_df(
-            df=self.database.copy(),
-            meta=weave_meta._meta_mapping,
-        )
-        self.check_intersection_columns_dataframe(
-            df=database_t, expected_cols=required_args
-        )
+    @staticmethod
+    def _resolve_effective_names(
+        weave_meta,
+        required_args: list[str],
+        optional_args: list[str],
+        outputs: list[str],
+    ) -> tuple[dict, list[str], list[str], list[str]]:
+        """Resolve effective names using meta mapping without renaming the DataFrame.
 
-        # Prepare the required arguments for the weave task + optional arguments
-        rargs = database_t[required_args].to_dict(orient="series")
+        Returns:
+            tuple[dict, list[str], list[str], list[str]]: A tuple containing 
+            the name mapping (name_map, rargs_m, oargs_m, outs_m).
+        """
+        name_map = weave_meta._meta_mapping or {}
+        inv_map = {v: k for k, v in name_map.items()}
+        # Support both directions: arg->dfcol or dfcol->arg
+        rargs_m = [name_map.get(a, inv_map.get(a, a)) for a in required_args]
+        oargs_m = [name_map.get(o, inv_map.get(o, o)) for o in optional_args]
+        # Outputs map forward only (orig -> new)
+        outs_m = [name_map.get(o, o) for o in outputs]
+        return name_map, rargs_m, oargs_m, outs_m
 
-        # Run calculation and build the graph
+    @staticmethod
+    def _build_required_kwargs(
+        df: pd.DataFrame, required_args: list[str], rargs_m: list[str]
+    ) -> dict:
+        """Build kwargs for calling the weave using original param names and mapped columns."""
+        return {orig: df[mapped] for orig, mapped in zip(required_args, rargs_m)}
+
+    def _record_weave_run(
+        self,
+        weave_name: str,
+        outputs_m: list[str],
+        rargs_m: list[str],
+        oargs_m: list[str],
+        params: dict,
+    ) -> None:
+        """Record metadata about the weave run for downstream graph/matrix."""
         self.weave_collector[self.weaveflow_name][weave_name] = {
-            "outputs": outputs,
-            "rargs": required_args,
-            "oargs": optional_args,
+            "outputs": outputs_m,
+            "rargs": rargs_m,
+            "oargs": oargs_m,
             "params": list(params),
         }
-        calculation_output = weave_task(**rargs, **oargs, **params)
 
-        return calculation_output, outputs, weave_name
+    @staticmethod
+    def _call_weave(weave_task: callable, rargs: dict, oargs: dict, params: dict):
+        """Execute the weave task with prepared arguments."""
+        return weave_task(**rargs, **oargs, **params)
+
+    def _optionals_from_kwargs(
+        self, weave_name: str, weave_optionals: list[str]
+    ) -> dict:
+        for oarg in weave_optionals:
+            if oarg in self.kwargs:
+                self.optionals[weave_name].update({oarg: self.kwargs[oarg]})
+
+    def _run_weave_task(self, weave_task: callable) -> None:
+        """Run a single weave task end-to-end on the current database."""
+        weave_name = getattr(weave_task, "__name__")
+        weave_meta = getattr(weave_task, "_weave_meta")
+
+        # Extract meta pieces
+        params = weave_meta._params
+        required_args = weave_meta._rargs
+        optional_args = weave_meta._oargs
+        outputs = weave_meta._outputs
+
+        # Collect optionals
+        oargs = self._collect_optionals_for_task(weave_name, optional_args, weave_task)
+
+        # Resolve names and validate presence
+        _, rargs_m, oargs_m, outs_m = self._resolve_effective_names(
+            weave_meta, required_args, optional_args, outputs
+        )
+        self.check_intersection_columns_dataframe(df=self.database, expected_cols=rargs_m)
+
+        # Build kwargs and execute
+        rargs = self._build_required_kwargs(self.database, required_args, rargs_m)
+        self._record_weave_run(
+            weave_name=weave_name,
+            outputs_m=outs_m,
+            rargs_m=rargs_m,
+            oargs_m=oargs_m,
+            params=params,
+        )
+        calculation_output = self._call_weave(weave_task, rargs, oargs, params)
+
+        return calculation_output, outs_m, weave_name
 
     def run(self):
         """Run the loomer on the database."""
