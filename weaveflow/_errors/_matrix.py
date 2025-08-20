@@ -8,4 +8,3 @@ class InvalidTaskCollectionError(ValueError):
 
     def __init__(self, detail: str):
         super().__init__(f"Invalid task collection for WeaveMatrix: {detail}")
-

@@ -14,4 +14,3 @@ def test_weave_matrix_accepts_empty_and_mapping():
     WeaveMatrix({})
     # Should not raise for proper mapping even if incomplete
     WeaveMatrix({"t1": {}})
-

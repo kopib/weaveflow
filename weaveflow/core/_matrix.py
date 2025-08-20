@@ -29,7 +29,9 @@ class WeaveMatrix:
     def __init__(self, task_collection: dict[str, dict]):
         # Validate mapping type early to give a clear error
         if task_collection is not None and not isinstance(task_collection, Mapping):
-            raise InvalidTaskCollectionError("task_collection must be a mapping of task_name -> dict")
+            raise InvalidTaskCollectionError(
+                "task_collection must be a mapping of task_name -> dict"
+            )
         self._tasks = task_collection or {}
 
     def build(self) -> pd.DataFrame:
