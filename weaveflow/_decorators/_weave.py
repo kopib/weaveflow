@@ -2,6 +2,7 @@
 Main decorator for weave tasks on data frames.
 """
 
+from dataclasses import replace
 import functools
 import inspect
 
@@ -87,8 +88,6 @@ def weave(
         if _is_weave(f):
             return f
 
-        setattr(f, "_weave", True)
-
         # Set function attributes
         required_args, optional_args = _get_function_args(f, nrargs)
 
@@ -129,6 +128,9 @@ def rethread(f: callable, meta: dict[str, str] = None) -> callable:
 
     # Get weave meta data from function
     weave_meta = getattr(f, "_weave_meta")
-    setattr(weave_meta, "_meta_mapping", meta)
+
+    # Update meta data with new mapping and store it back to function, overwriting previous meta data
+    weave_meta = replace(weave_meta, _meta_mapping=meta)
+    setattr(f, "_weave_meta", weave_meta)
 
     return f
