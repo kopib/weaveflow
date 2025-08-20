@@ -32,6 +32,10 @@ class WeaveMeta:
 class RefineMeta:
     """
     Metadata for the Refine decorator.
+
+    This class is frozen. Container-like attributes (_params) are returned as copies
+    when accessed to prevent external mutation. Large objects (_params_object) are
+    passed through unchanged.
     """
 
     _refine: bool
@@ -40,3 +44,9 @@ class RefineMeta:
     _on_method: str = None
     _params: dict[str, str] = None
     _params_object: object = None
+
+    def __getattribute__(self, name: str):
+        val = super().__getattribute__(name)
+        if name == "_params" and isinstance(val, dict):
+            return dict(val)
+        return val
