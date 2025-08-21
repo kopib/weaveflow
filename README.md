@@ -88,15 +88,19 @@ This generates two beautiful graphs of the data pipelines:
 #### Weave Graph
 *Shows how your columns are created and what they depend on.*
 
-![Weave Graph Example](assets/output/graphs/weave_graph.png)
+<div style="overflow: auto;">
+  <img src="assets/output/graphs/weave_graph.png" alt="Weave Graph Example" style="max-width: none;">
+</div>
 
 #### Refine Graph
 *Shows the high-level, sequential stages of your data transformation.*
 
-![Refine Graph Example](assets/output/graphs/refine_graph.png)
+<div style="overflow: auto;">
+  <img src="assets/output/graphs/refine_graph.png" alt="Refine Graph Example" style="max-width: none;">
+</div>
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>

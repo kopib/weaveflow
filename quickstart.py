@@ -279,7 +279,7 @@ if __name__ == "__main__":
     loomer.run()
 
     weave_graph = wf.WeaveGraph(loomer)
-    g = weave_graph.build(timer=True)
+    g = weave_graph.build(timer=True, size=20)
     g.render("assets/output/graphs/weave_graph", format="png", cleanup=True)
 
     weave_matrix: pd.DataFrame = weave_graph.build_matrix()

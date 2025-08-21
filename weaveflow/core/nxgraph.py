@@ -163,6 +163,7 @@ class WeaveGraph(_BaseGraph):
                 "size": f"{size},{size}!",
                 "mindist": str(mindist),
                 "label": f"<<b>Weave Graph for {self.loom.weaveflow_name!r}</b>>",
+                "labelloc": "t",
             }
         )
 
@@ -270,7 +271,7 @@ class RefineGraph(_BaseGraph):
 
     def build(
         self,
-        size: int = 12,
+        size: int = 12, # TODO: Make intelligent sizing depending on the number of tasks
         timer: bool = False,
         mindist: float = 1.2,
         legend: bool = True,
@@ -291,6 +292,7 @@ class RefineGraph(_BaseGraph):
                 "size": f"{size},{size}!",
                 "mindist": str(mindist),
                 "label": f"<<b>Refine Graph for {self.loom.weaveflow_name!r}</b>>",
+                "labelloc": "t",
             }
         )
 
