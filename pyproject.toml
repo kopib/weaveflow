@@ -1,11 +1,10 @@
 [project]
 name = "weaveflow"
-version = "0.1.0"
+version = "0.1.0a1"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "black>=25.1.0",
     "graphviz>=0.21",
     "networkx>=3.5",
     "pandas>=2.3.1",
@@ -13,6 +12,7 @@ dependencies = [
     "pygraphviz>=1.14",
     "pytest>=8.4.1",
     "pyyaml>=6.0.2",
+    "ruff>=0.12.9",
     "tomli>=2.2.1",
 ]
 
