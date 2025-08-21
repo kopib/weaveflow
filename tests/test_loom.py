@@ -69,12 +69,8 @@ def test_error_on_non_weave(base_dataframe_input):
 
     # Raise ValueError if ninputs is not an integer or is negative
     with pytest.raises(ValueError):
-        weave(outputs="col1_plus_1", nrargs=2.0)(
-            invalid_inputs_weave
-        )  # ninputs is not an integer
-        weave(outputs="col1_plus_1", nrargs=-1)(
-            invalid_inputs_weave
-        )  # ninputs is negative
+        weave(outputs="col1_plus_1", nrargs=2.0)(invalid_inputs_weave)  # ninputs is not an integer
+        weave(outputs="col1_plus_1", nrargs=-1)(invalid_inputs_weave)  # ninputs is negative
         weave(outputs="constant", nrargs=1)(
             invalid_optional_arg_weave
         )  # ninputs is specified but function has optional arguments
@@ -157,9 +153,7 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
             scale_sum,
             margin_scaled,
         ],
-        optionals={
-            margin_scaled: {"scaler": 2, "margin": 1}
-        },  # Make task-specific optionals
+        optionals={margin_scaled: {"scaler": 2, "margin": 1}},  # Make task-specific optionals
         margin=margin,
         scaler=scaler,
     )
@@ -177,8 +171,7 @@ def test_rethread(base_dataframe_input: pd.DataFrame):
     loom.run()
 
     assert (
-        list(loom.database.columns)
-        == list(meta.keys()) + calculate_stats_t._weave_meta._outputs
+        list(loom.database.columns) == list(meta.keys()) + calculate_stats_t._weave_meta._outputs
     )
 
     expected_df = base_dataframe_input.copy()
@@ -224,9 +217,7 @@ def test_unknown_optional_argument(base_dataframe_input: pd.DataFrame):
         check_names=False,
     )
 
-    loom = Loom(
-        database=base_dataframe_input, tasks=[add_columns], optionals={"unknown": 2}
-    )
+    loom = Loom(database=base_dataframe_input, tasks=[add_columns], optionals={"unknown": 2})
     loom.run()
     pd.testing.assert_series_equal(
         loom.database["modified_unknown"],

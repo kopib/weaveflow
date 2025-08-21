@@ -18,7 +18,6 @@ class _BaseWeave(ABC):
         self.weave_collector = defaultdict(dict)
 
     def __pre_init__(self):
-
         if not isinstance(self.weave_tasks, Iterable):
             raise TypeError("'weave_tasks' must be a Iterable of weave tasks")
 
@@ -77,9 +76,7 @@ class PandasWeave(_BaseWeave):
         return pd.DataFrame(calculation_output_dict, **kwargs)
 
     @staticmethod
-    def check_intersection_columns_dataframe(
-        df: pd.DataFrame, expected_cols: list[str]
-    ) -> None:
+    def check_intersection_columns_dataframe(df: pd.DataFrame, expected_cols: list[str]) -> None:
         """
         Check if the columns in the database intersect with the outputs.
 
@@ -111,9 +108,7 @@ class PandasWeave(_BaseWeave):
             for oarg in optional_args
             if oarg in self.global_optionals
         }
-        task_optionals = self.optionals.get(weave_name, {}) or self.optionals.get(
-            weave_task, {}
-        )
+        task_optionals = self.optionals.get(weave_name, {}) or self.optionals.get(weave_task, {})
         oargs.update(task_optionals)
         return oargs
 
@@ -169,9 +164,7 @@ class PandasWeave(_BaseWeave):
         """Execute the weave task with prepared arguments."""
         return weave_task(**rargs, **oargs, **params)
 
-    def _optionals_from_kwargs(
-        self, weave_name: str, weave_optionals: list[str]
-    ) -> dict:
+    def _optionals_from_kwargs(self, weave_name: str, weave_optionals: list[str]) -> dict:
         for oarg in weave_optionals:
             if oarg in self.kwargs:
                 self.optionals[weave_name].update({oarg: self.kwargs[oarg]})
@@ -194,9 +187,7 @@ class PandasWeave(_BaseWeave):
         _, rargs_m, oargs_m, outs_m = self._resolve_effective_names(
             weave_meta, required_args, optional_args, outputs
         )
-        self.check_intersection_columns_dataframe(
-            df=self.database, expected_cols=rargs_m
-        )
+        self.check_intersection_columns_dataframe(df=self.database, expected_cols=rargs_m)
         # Build kwargs and execute
         rargs = self._build_required_kwargs(self.database, required_args, rargs_m)
         # Execute with timing for graph edges
@@ -218,7 +209,6 @@ class PandasWeave(_BaseWeave):
     def run(self):
         """Run the loomer on the database."""
         for weave_task in self.weave_tasks:
-
             calculation_output, outputs, weave_name = self._run_weave_task(weave_task)
 
             if calculation_output is None:
@@ -252,9 +242,7 @@ class Loom(PandasWeave):
         filtered_weave_tasks = [task for task in tasks if _is_weave(task)]
         # TODO: Rename weave_tasks to tasks
         # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.
-        super().__init__(
-            database, filtered_weave_tasks, weaveflow_name, optionals, **kwargs
-        )
+        super().__init__(database, filtered_weave_tasks, weaveflow_name, optionals, **kwargs)
         self.tasks = all_tasks  # All tasks
         self.refine_collector = defaultdict(dict)
         self.__pre_init__()
@@ -269,16 +257,16 @@ class Loom(PandasWeave):
                 raise TypeError(
                     f"Argument 'weave_tasks' contains a non-weave and non-refine task: {task!r}"
                 )
-            
+
     def _record_refine_run(
-        self, 
+        self,
         refine_task_name: str,
         on_method: str,
         params: list[str],
         params_object: str,
         description: str,
         delta_time: float,
-        ) -> None:
+    ) -> None:
         """Record metadata about the refine run for downstream graph/matrix."""
         self.refine_collector[self.weaveflow_name][refine_task_name] = {
             "on_method": on_method,
@@ -313,12 +301,9 @@ class Loom(PandasWeave):
         )
 
     def _run(self):
-
         for task in self.tasks:
-
             # If task is a weave task, calculate new columns and add them to the database
             if _is_weave(task):
-
                 # Run weave task on task arguments according to meta information
                 calculation_output, outputs, weave_name = self._run_weave_task(task)
 

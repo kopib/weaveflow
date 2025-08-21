@@ -109,7 +109,6 @@ class WeaveGraph(_BaseGraph):
         """Create graph by adding all relevant nodes and edges."""
 
         for fn, vals in self.weave_collector[weaveflow_name].items():
-
             # Get all relevant nodes
             outputs = vals["outputs"]
             rargs = vals["rargs"]
@@ -170,9 +169,7 @@ class WeaveGraph(_BaseGraph):
         g = graphviz.Digraph(graph_attr=graph_attr)
 
         for k, v in self.graph.nodes.items():
-            g.node(
-                k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35"
-            )
+            g.node(k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35")
 
         for n1, n2 in self.graph.edges():
             # If left node is weave and produces output
@@ -229,17 +226,14 @@ class WeaveGraph(_BaseGraph):
 
 
 class RefineGraph(_BaseGraph):
-
     def __init__(self, loom: Loom):
         super().__init__(loom)
         self.refine_collector = loom.refine_collector
 
     def _setup(self, weaveflow_name: str):
-
         refine_collector = self.refine_collector[weaveflow_name]
         # Add nodes and edges for each refine task
         for fn, vals in refine_collector.items():
-
             params = vals["params"]
             params_object = vals["params_object"]
             # on_method = vals["on_method"]
@@ -266,9 +260,7 @@ class RefineGraph(_BaseGraph):
         if refine_tasks:
             # Add edges between refine tasks
             if len(refine_tasks) > 1:
-                self.graph.add_edges_from(
-                    [(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])]
-                )
+                self.graph.add_edges_from([(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])])
 
             # Add Start/End nodes and connect them to the flow
             _add_graph_nodes(self.graph, "Start DataFrame", type="boundary")
@@ -283,7 +275,6 @@ class RefineGraph(_BaseGraph):
         mindist: float = 1.2,
         legend: bool = True,
     ):
-
         self._setup(self.loom.weaveflow_name)
 
         # Get refine collector for current weaveflow
@@ -306,9 +297,7 @@ class RefineGraph(_BaseGraph):
         g = graphviz.Digraph(graph_attr=graph_attr)
 
         for k, v in self.graph.nodes.items():
-            g.node(
-                k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35"
-            )
+            g.node(k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35")
 
         for n1, n2 in self.graph.edges():
             if timer:

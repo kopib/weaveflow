@@ -97,9 +97,7 @@ def _load_config_data(
 
     # Assert custom engine is callable
     if not ((custom_engine is None) or isinstance(custom_engine, dict)):
-        raise TypeError(
-            "Custom engine must be a dict mapping file extensions to read function."
-        )
+        raise TypeError("Custom engine must be a dict mapping file extensions to read function.")
 
     # If path specified, use that
     if isinstance(path, (str, Path)):
@@ -122,9 +120,7 @@ def _load_config_data(
         if not config_path.exists():
             raise FileNotFoundError(f"Specified config file not found: {config_path}")
         # Read specific file, can be dict (if config file) or any other type (if custom engine)
-        data: dict | DataFrame = _Reader(
-            str(config_path), custom_engine=custom_engine
-        ).read()
+        data: dict | DataFrame = _Reader(str(config_path), custom_engine=custom_engine).read()
         # If data is a DataFrame, wrap it in a dict to standardize output
         if isinstance(data, DataFrame):
             data = {config_path.stem: data}
@@ -211,12 +207,10 @@ def spool(
     """
 
     def decorator(func_or_class: callable) -> callable:
-
         setattr(func_or_class, "_spool", True)
 
         # --- Handle class decoration ---
         if isclass(func_or_class):
-
             original_init = func_or_class.__init__
 
             @functools.wraps(original_init)
@@ -292,7 +286,6 @@ def spool_asset(
     """
     # TODO: Create setup.py to set up folder structure
     asset_path = (
-        Path(get_option("asset_path"))
-        or Path(__file__).parent.parent.parent / "assets/static"
+        Path(get_option("asset_path")) or Path(__file__).parent.parent.parent / "assets/static"
     )
     return spool(_func, file=file, path=asset_path, custom_engine=custom_engine)

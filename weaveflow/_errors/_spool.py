@@ -4,7 +4,6 @@ class ParamsFromIsNotASpoolError(TypeError):
     """
 
     def __init__(self, passed_object: object):
-
         if object is not None:
             # Get the type and name of the object that was passed
             obj_type = type(passed_object).__name__

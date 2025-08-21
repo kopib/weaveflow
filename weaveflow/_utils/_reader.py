@@ -63,9 +63,7 @@ class _ConfigReader:
 
         return default_engine
 
-    def __init__(
-        self, path: Path | str, custom_engine: dict[str, callable] = None
-    ) -> None:
+    def __init__(self, path: Path | str, custom_engine: dict[str, callable] = None) -> None:
         self.path = path
         self.extension = Path(path).suffix.lower()
         _engines = {

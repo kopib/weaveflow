@@ -67,9 +67,7 @@ def test_spool_weave(finacial_dataframe):
 
     df = finacial_dataframe.copy()
 
-    net_worth = (
-        (df["stocks"] - df["investments"]) * (1 - 0.42) + df["investments"] + df["rest"]
-    )
+    net_worth = (df["stocks"] - df["investments"]) * (1 - 0.42) + df["investments"] + df["rest"]
     net_worth *= 1 - margin_of_safety
 
     df["net_worth"] = net_worth

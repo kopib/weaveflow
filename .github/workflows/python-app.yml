@@ -47,9 +47,9 @@ jobs:
         uv pip install --system -e .
         
     # Checks your code formatting with black
-    - name: Check formatting with black
+    - name: Check formatting with Ruff
       run: |
-        black --check .
+        ruff format --check .
 
     # Lints your code with flake8
     - name: Lint with flake8

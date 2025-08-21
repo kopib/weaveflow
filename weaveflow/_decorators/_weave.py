@@ -39,7 +39,6 @@ def _get_function_args(f: callable, nrargs: int = None) -> tuple[list[str], list
             optional.append(param.name)
 
     if isinstance(nrargs, int) and nrargs > 0:
-
         if optional:
             raise ValueError(
                 "Function has optional arguments, but 'nrargs' is specified. "
@@ -61,10 +60,7 @@ def _is_weave(f: callable) -> bool:
     return callable(f) and hasattr(f, "_weave_meta")
 
 
-def weave(
-    outputs: str | list[str], nrargs: int = None, params_from: object = None
-) -> callable:
-
+def weave(outputs: str | list[str], nrargs: int = None, params_from: object = None) -> callable:
     # TODO: Infer number of inputs if not provided
 
     if params_from and nrargs is not None:
@@ -83,7 +79,6 @@ def weave(
         raise ValueError("Argument 'outputs' must be a string or a list of strings.")
 
     def decorator(f: callable):
-
         # If function is already a weave task, return function
         if _is_weave(f):
             return f

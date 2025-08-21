@@ -24,3 +24,10 @@ markers = [
     "edges: marks tests for graph edge creation.",
     "empty: marks tests for handling empty tasks.",
 ]
+
+[tool.ruff]
+line-length = 99
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true

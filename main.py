@@ -21,13 +21,16 @@ def delayed(seconds: int = 1):
     A decorator that waits a specified number of seconds before
     executing the decorated function.
     """
+
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             time.sleep(seconds)
             result = f(*args, **kwargs)
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -35,8 +38,8 @@ def generate_data(seed: int = 42, num_companies: int = 50):
     # Generate random data
     np.random.seed(seed)
     industries = ["Technology", "Healthcare", "Industrials", "Consumer Goods"]
-    company_names = [f"Company_{i+1}" for i in range(num_companies)]
-    tickers = [f"CMP{i+1}" for i in range(num_companies)]
+    company_names = [f"Company_{i + 1}" for i in range(num_companies)]
+    tickers = [f"CMP{i + 1}" for i in range(num_companies)]
 
     data = {
         "company_name": company_names,
@@ -49,12 +52,8 @@ def generate_data(seed: int = 42, num_companies: int = 50):
         "ps_ratio": np.round(np.random.uniform(1, 10, num_companies), 1),
         "dividend_yield": np.round(np.random.uniform(0, 0.05, num_companies), 3),
         "payout_ratio": np.round(np.random.uniform(0.1, 0.7, num_companies), 2),
-        "free_cash_flow_millions": np.round(
-            np.random.uniform(100, 5000, num_companies), 1
-        ),
-        "revenue_growth_rate": np.round(
-            np.random.uniform(-0.02, 0.25, num_companies), 3
-        ),
+        "free_cash_flow_millions": np.round(np.random.uniform(100, 5000, num_companies), 1),
+        "revenue_growth_rate": np.round(np.random.uniform(-0.02, 0.25, num_companies), 3),
         "debt_to_equity": np.round(np.random.uniform(0.1, 2.5, num_companies), 2),
     }
     companies_df = pd.DataFrame(data)
@@ -119,7 +118,6 @@ def get_market_data(
     equity_risk_premium: float,
     industry_betas: dict[str, float],
 ) -> tuple[Any, ...]:
-
     return (
         risk_free_rate,
         equity_risk_premium,
@@ -140,9 +138,7 @@ def get_analyst_ratings(
     return rslt["analyst_rating"], rslt["price_target"]
 
 
-@wf.weave(
-    outputs=["average_pe_ratio", "average_dividend_yield"], params_from=IndustryMetrics
-)
+@wf.weave(outputs=["average_pe_ratio", "average_dividend_yield"], params_from=IndustryMetrics)
 @delayed(seconds=1.1)
 def get_industry_metrics(
     industry: str,
@@ -162,9 +158,7 @@ class DataPreprocessor:
 
     def _remove_missing_values(self):
         """Drops rows with any NaN values."""
-        self.df.dropna(
-            subset=["pe_ratio"], inplace=True
-        )  # Only drop if pe_ratio is missing
+        self.df.dropna(subset=["pe_ratio"], inplace=True)  # Only drop if pe_ratio is missing
 
     def _cap_pe_by_industry(self):
         """Filters out companies with P/E ratios above their industry's cap."""
@@ -220,7 +214,6 @@ def discounted_cashflow_model(
     growth_rates: dict[str, float],
     n: int = 20,
 ) -> pd.Series:
-
     growth_ratio = industry.map(growth_rates)
     years = np.arange(1, n + 1)
 
@@ -246,19 +239,15 @@ def discounted_cashflow_model(
     return sum_of_present_values, sum_of_present_values - current_price
 
 
-@wf.refine # If no on_method is specified, `run` method is used by default
+@wf.refine  # If no on_method is specified, `run` method is used by default
 class UndervaluedData:
-
     def __init__(self, df: pd.DataFrame, margin_of_safety: float = 0.05):
         self.df = df
         self.margin_of_safety = margin_of_safety
 
     def _get_undervalued(self) -> pd.DataFrame:
         """Get undervalued companies with margin of safety."""
-        m = (
-            self.df["fair_value_dfc"] * (1 - self.margin_of_safety)
-            < self.df["current_price"]
-        )
+        m = self.df["fair_value_dfc"] * (1 - self.margin_of_safety) < self.df["current_price"]
         return self.df[m]
 
     @delayed(seconds=0.5)
@@ -270,7 +259,7 @@ class UndervaluedData:
 
 
 if __name__ == "__main__":
-    df = generate_data(num_companies=10_000) # Generate data
+    df = generate_data(num_companies=10_000)  # Generate data
 
     loomer = wf.Loom(
         df,

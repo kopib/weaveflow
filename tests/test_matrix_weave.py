@@ -50,9 +50,7 @@ def test_weave_matrix_single_outputs_only():
     }
     df = WeaveMatrix(task_collection).build()
 
-    expected = pd.DataFrame(
-        {"t1": ["Output", "Output"]}, index=["y1", "y2"]
-    )  # rows sorted
+    expected = pd.DataFrame({"t1": ["Output", "Output"]}, index=["y1", "y2"])  # rows sorted
     assert_frame_equal(df, expected)
 
 
@@ -212,7 +210,6 @@ def test_build_matrix_filters_refine_and_skipped_weaves():
 
 
 def test_build_matrix_returns_dataframe_type():
-
     @weave(outputs="y")
     def f(x: pd.Series):
         return x
@@ -226,7 +223,6 @@ def test_build_matrix_returns_dataframe_type():
 
 
 def test_build_matrix_only_refines_results_empty():
-
     @refine
     def noop(df: pd.DataFrame):
         return df

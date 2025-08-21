@@ -65,7 +65,6 @@ def clean_data(df: DataFrame) -> DataFrame:
 
 @refine(on_method="clean")
 class DataCleaner:
-
     def __init__(self, df: DataFrame):
         self.df = df
 
@@ -75,7 +74,6 @@ class DataCleaner:
 
 
 class DataCleanerStatic:
-
     @refine  # Also works for static methods
     @staticmethod
     def clean(df: DataFrame):
@@ -84,7 +82,6 @@ class DataCleanerStatic:
 
 @refine(on_method="group")
 class DataGrouper:
-
     def __init__(self, df: DataFrame):
         self.df = df
 
@@ -93,7 +90,6 @@ class DataGrouper:
 
 
 def test_weave_spool_basics():
-
     # Check meta data of weave with spooled params
     meta = getattr(get_total_costs, "_weave_meta")
     assert meta._rargs == ["city", "children", "has_subscription"]
@@ -114,7 +110,6 @@ def test_weave_spool_basics():
 
 @pytest.mark.parametrize("refiner_task", [DataCleaner, DataCleanerStatic.clean])
 def test_consistency_in_refiner(personal_data, refiner_task):
-
     # Define expected loom using `clean_data` refiner
     expected_loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data])
     expected_loom.run()
@@ -126,20 +121,15 @@ def test_consistency_in_refiner(personal_data, refiner_task):
 
 
 def test_loomflow_with_refiner(personal_data):
-
     # Define loom with clean_data refiner
-    loom = Loom(
-        personal_data, [get_total_costs, get_surplus, clean_data, get_total_city_costs]
-    )
+    loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data, get_total_city_costs])
     loom.run()
 
     # assert that 2 rows (number 7 and 9) are dropped by clean_data refiner due to nan values
     assert len(loom.database) == len(personal_data) - 2
     assert loom.database.index.tolist() == [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14]
     # Assert new columns are added by weave functions
-    assert all(
-        c in loom.database.columns for c in ["total_costs", "surplus", "city_costs"]
-    )
+    assert all(c in loom.database.columns for c in ["total_costs", "surplus", "city_costs"])
 
     # Define expected total cost column based on data inputs and spooled params
     total_cost_expected = Series(
@@ -179,7 +169,6 @@ def test_loomflow_with_refiner(personal_data):
 
 
 def test_loomflow_with_several_refiners(personal_data):
-
     loom = Loom(
         personal_data,
         [get_total_costs, get_surplus, get_total_city_costs, DataCleaner, DataGrouper],
