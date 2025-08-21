@@ -5,6 +5,7 @@ It provides functions to set and retrieve package-level options, such as
 default paths or feature flags, allowing for centralized configuration
 management.
 """
+
 from pathlib import Path
 from typing import Any
 from collections.abc import Iterable

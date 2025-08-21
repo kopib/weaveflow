@@ -1,6 +1,8 @@
 """
 This module provides utility functions shared across the decorator implementations.
 """
+
+
 def dump_object_to_dict(obj: object = None) -> dict:
     """
     Convert parameters from 'params_from' object to dict for passing to

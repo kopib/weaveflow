@@ -5,6 +5,7 @@ It uses networkx and graphviz to build and render visual representations
 of both 'weave' and 'refine' task dependencies, helping to illustrate
 the data processing pipeline.
 """
+
 from abc import ABC, abstractmethod
 from typing import Union
 import graphviz
@@ -278,7 +279,7 @@ class RefineGraph(_BaseGraph):
 
     def build(
         self,
-        size: int = 12, # TODO: Make intelligent sizing depending on the number of tasks
+        size: int = 12,  # TODO: Make intelligent sizing depending on the number of tasks
         timer: bool = False,
         mindist: float = 1.2,
         legend: bool = True,
