@@ -1,15 +1,16 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/kopi-cloud/weaveflow/main/assets/logo/weaveflow_logo.png" alt="weaveflow logo" width="200"/>
+  <img src="https://raw.githubusercontent.com/kopib/weaveflow/main/assets/logo.png" alt="weaveflow logo" width="200"/>
   <h1>weaveflow</h1>
   <p>
-    <strong>Make your pandas processes clearer, your functions <code>weaveable</code>, and your data processing <code>refineable</code>. Create beautiful, standardized, and visual data pipelines.</strong>
+    <strong>Make your pandas processes flow with ease, your functions <code>weaveable</code>, and your data processing <code>refineable</code>. Create beautiful, readable,  standardized, and visual data pipelines.</strong>
   </p>
   <p>
     <a href="https://pypi.org/project/weaveflow/"><img alt="Python Version" src="https://img.shields.io/badge/python-3.13+-blue.svg"></a>
-    <a href="https://github.com/kopi-cloud/weaveflow/actions"><img alt="CI" src="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml/badge.svg?"></a>
-    <a href="https://github.com/astral-sh/ruff"><img alt="Code style: ruff" src="https://img.shields.io/badge/code%20style-ruff-black.svg"></a>
+    <a href="https://github.com/astral-sh/ruff"><img alt="CI Status" src="https://img.shields.io/badge/code%20style-ruff-black.svg"></a>
+    <a href="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml"><img alt="Code style: ruff" src="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml/badge.svg"></a>
   </p>
 </div>
+
 
 ---
 
