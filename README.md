@@ -4,11 +4,15 @@
   <p>
     <strong>Make your pandas processes clearer, your functions <code>weaveable</code>, and your data processing <code>refineable</code>. Create beautiful, standardized, and visual data pipelines.</strong>
   </p>
-  <p>
-    <a href="https://pypi.org/project/weaveflow/"><img alt="PyPI" src="https://img.shields.io/pypi/v/weaveflow.svg"></a>
+    <p>
+    <a href="https://pypi.org/project/weaveflow/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/weaveflow.svg"></a>
+    <a href="https://pypi.org/project/weaveflow/"><img alt="PyPI Downloads" src="https://img.shields.io/pypi/dm/weaveflow.svg"></a>
+    <a href="https://pypi.org/project/weaveflow/"><img alt="Python Version" src="https://img.shields.io/badge/python-3.13+-blue.svg"></a>
     <a href="https://github.com/kopi-cloud/weaveflow/actions"><img alt="CI" src="https://github.com/kopi-cloud/weaveflow/workflows/CI/badge.svg"></a>
+    <a href="https://codecov.io/gh/kopi-cloud/weaveflow"><img alt="Coverage Status" src="https://img.shields.io/codecov/c/github/kopi-cloud/weaveflow"></a>
+    <a href="https://github.com/astral-sh/ruff"><img alt="Code style: ruff" src="https://img.shields.io/badge/code%20style-ruff-black.svg"></a>
     <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
-  </p>
+    </p>
 </div>
 
 ---
