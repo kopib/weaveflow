@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # Output files
-assets/
+assets/output
 *.log
 *.pid
 *.sqlite

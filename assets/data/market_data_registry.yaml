@@ -1,0 +1,8 @@
+risk_free_rate: 0.042
+equity_risk_premium: 0.055
+industry_betas: {
+    "Technology": 1.25,
+    "Healthcare": 0.95,
+    "Industrials": 1.10,
+    "Consumer Goods": 0.80
+}

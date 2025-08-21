@@ -1,0 +1,15 @@
+ticker,analyst_rating,price_target
+CMP1,Buy,180.5
+CMP3,Hold,450.0
+CMP5,Buy,300.0
+CMP8,Buy,550.0
+CMP10,Sell,75.0
+CMP12,Hold,210.0
+CMP15,Buy,400.0
+CMP22,Buy,600.0
+CMP25,Hold,150.0
+CMP30,Buy,320.0
+CMP31,Sell,90.0
+CMP37,Hold,250.0
+CMP42,Buy,480.0
+CMP48,Buy,510.0
