@@ -6,11 +6,10 @@
   </p>
   <p>
     <a href="https://pypi.org/project/weaveflow/"><img alt="Python Version" src="https://img.shields.io/badge/python-3.13+-blue.svg"></a>
-    <a href="https://github.com/astral-sh/ruff"><img alt="CI Status" src="https://img.shields.io/badge/code%20style-ruff-black.svg"></a>
-    <a href="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml"><img alt="Code style: ruff" src="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml/badge.svg"></a>
+    <a href="https://github.com/astral-sh/ruff"><img alt="Code style: ruff" src="https://img.shields.io/badge/code%20style-ruff-black.svg"></a>
+    <a href="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml"><img alt="CI Status" src="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml/badge.svg"></a>
   </p>
 </div>
-
 
 ---
 
@@ -46,167 +45,58 @@ Stop wrestling with tangled scripts and start weaving elegant data stories.
 
 ## 📦 Installation
 
-You can install `weaveflow` via `pip`:
+`weaveflow` is currently in an active development (alpha) stage. You can not install the pre-release from PyPI yet - but it will be soon when the package is considered stable, stay tuned!
+
+## 🔧 Local Development Setup
+
+If you want to contribute to `weaveflow` or use the absolute latest, unreleased version, you should install it from a local clone of the repository. This project uses `uv` for high-performance package management and `pygraphviz` for graph visualization. Make sure these dependencies are installed before proceeding.
+
+**Install `uv` and `pygraphviz`:**
 
 ```bash
-pip install weaveflow
-```
+# Install uv
+pip install uv
 
-You will also need to install `graphviz` to render the pipeline graphs.
-
-```bash
 # For Debian/Ubuntu
-sudo apt-get install graphviz
+sudo apt-get update && sudo apt-get install -y graphviz
 
 # For MacOS (using Homebrew)
 brew install graphviz
 ```
 
-## 🏁 Quickstart: A Financial Analysis Pipeline
+**Setup your local development environment:**
 
-Let's build a pipeline to identify undervalued stocks from a dataset of companies.
+```bash
+git clone https://github.com/kopib/weaveflow.git
+cd weaveflow
 
-### 1. Define Your Data Sources (`@spool_asset`)
-
-First, let's externalize our market assumptions into a YAML file. This keeps our code clean and parameters easy to change.
-
-`assets/data/market_data.yaml`:
-```yaml
-risk_free_rate: 0.02
-equity_risk_premium: 0.055
-industry_betas:
-  Technology: 1.2
-  Healthcare: 0.9
-  Industrials: 1.0
-  Consumer Goods: 0.8
+uv pip install -e .
 ```
 
-Now, create a "spool asset" to load this data into our pipeline.
+Now you're ready to develop and test `weaveflow` locally.
 
-```python
-from dataclasses import dataclass
-import weaveflow as wf
+## 🏁 Quickstart: An illustrative example pipeline
 
-@wf.spool_asset
-@dataclass
-class MarketData:
-    risk_free_rate: float
-    equity_risk_premium: float
-    industry_betas: dict[str, float]
+To see `weaveflow` in action, run the `quickstart.py` script:
+
+```bash
+uv run quickstart.py
 ```
 
-### 2. Make Your Functions `weaveable`
-
-Next, define functions to calculate new columns. The `@weave` decorator declares the output columns and automatically injects required columns (like `industry`) and spooled parameters (from `MarketData`).
-
-```python
-import pandas as pd
-
-@wf.weave(outputs=["rf_rate", "erp", "betas"], params_from=MarketData)
-def get_market_data(
-    industry: pd.Series,
-    risk_free_rate: float,
-    equity_risk_premium: float,
-    industry_betas: dict[str, float],
-) -> tuple:
-    return (
-        risk_free_rate,
-        equity_risk_premium,
-        industry.map(industry_betas),
-    )
-
-@wf.weave("cost_of_equity")
-def calculate_cost_of_equity(rf_rate: float, erp: float, betas: float) -> float:
-    """Calculates Cost of Equity using the CAPM model."""
-    return rf_rate + betas * erp
-```
-
-### 3. Make Your Processing Steps `refineable`
-
-Use a `@refine` class to perform multi-step data cleaning and filtering on the entire DataFrame. `weaveflow` will call the `process` method.
-
-```python
-@wf.refine(on_method="process")
-class DataPreprocessor:
-    def __init__(self, df: pd.DataFrame):
-        self.df = df
-
-    def _remove_missing_values(self):
-        self.df.dropna(subset=["pe_ratio"], inplace=True)
-
-    def process(self) -> pd.DataFrame:
-        """Orchestrates the preprocessing steps."""
-        self._remove_missing_values()
-        # ... other cleaning steps ...
-        return self.df
-```
-
-### 4. Weave it all together with `Loom`
-
-The `Loom` class is the orchestrator. You provide it with your initial data and a list of all your `weave` and `refine` tasks. `weaveflow` handles the rest.
-
-```python
-# main.py
-import pandas as pd
-import weaveflow as wf
-from your_module import get_market_data, calculate_cost_of_equity, DataPreprocessor #, ... other tasks
-
-# 1. Generate or load your initial DataFrame
-df = generate_data(num_companies=1000)
-
-# 2. Define the pipeline tasks in order
-pipeline_tasks = [
-    get_market_data,
-    DataPreprocessor,
-    calculate_cost_of_equity,
-    # ... add all your other weave and refine tasks here
-]
-
-# 3. Create and run the Loom
-loomer = wf.Loom(
-    df,
-    tasks=pipeline_tasks,
-    weaveflow_name="UnderValuedCompanies"
-)
-loomer.run()
-
-# The final, processed DataFrame is in loomer.database
-print(loomer.database.head())
-```
-
-### 5. Visualize Your Flow
-
-Now for the magic. Let's visualize the pipeline we just created.
-
-```python
-# Visualize the feature engineering dependencies
-weave_graph = wf.WeaveGraph(loomer)
-weave_graph.build().render("assets/output/weave_graph", view=True)
-
-# Visualize the sequential refinement steps
-refine_graph = wf.RefineGraph(loomer)
-refine_graph.build().render("assets/output/refine_graph", view=True)
-```
-
-This generates two beautiful graphs:
+This generates two beautiful graphs of the data pipelines:
 
 #### Weave Graph
 *Shows how your columns are created and what they depend on.*
 
-!Weave Graph Example
+![Weave Graph Example](assets/output/graphs/weave_graph.png)
 
 #### Refine Graph
 *Shows the high-level, sequential stages of your data transformation.*
 
-!Refine Graph Example
-
-## Contributing
-
-Contributions are welcome! Whether it's bug reports, feature requests, or code contributions, please feel free to open an issue or a pull request.
+![Refine Graph Example](assets/output/graphs/refine_graph.png)
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
-

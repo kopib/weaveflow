@@ -11,6 +11,8 @@ wheels/
 
 # Output files
 assets/output
+assets/archive
+
 *.log
 *.pid
 *.sqlite

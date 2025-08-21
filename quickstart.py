@@ -279,9 +279,12 @@ if __name__ == "__main__":
     loomer.run()
 
     weave_graph = wf.WeaveGraph(loomer)
-    weave_graph.build(timer=True).render("assets/output/weave_graph", view=True)
+    g = weave_graph.build(timer=True)
+    g.render("assets/output/graphs/weave_graph", format="png", cleanup=True)
+
     weave_matrix: pd.DataFrame = weave_graph.build_matrix()
-    weave_matrix.to_csv("assets/output/weave_matrix.csv")
+    weave_matrix.to_csv("assets/output/matrix/weave_matrix.csv")
 
     refine_graph = wf.RefineGraph(loomer)
-    refine_graph.build(timer=True).render("assets/output/refine_graph", view=True)
+    g = refine_graph.build(timer=True)
+    g.render("assets/output/graphs/refine_graph", format="png", cleanup=True)
