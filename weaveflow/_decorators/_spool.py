@@ -1,3 +1,7 @@
+"""
+This module provides the '@spool' and '@spool_asset' decorators, which
+are used to automatically populate objects with data from configuration files.
+"""
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any

@@ -1,3 +1,7 @@
+"""
+This module implements the '@refine' decorator, which is designed for
+tasks that perform sequential, in-place transformations on a DataFrame.
+"""
 from dataclasses import replace
 import functools
 import inspect

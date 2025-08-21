@@ -1,3 +1,10 @@
+"""
+This module provides the graph visualization capabilities for weaveflow.
+
+It uses networkx and graphviz to build and render visual representations
+of both 'weave' and 'refine' task dependencies, helping to illustrate
+the data processing pipeline.
+"""
 from abc import ABC, abstractmethod
 from typing import Union
 import graphviz

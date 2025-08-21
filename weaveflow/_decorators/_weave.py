@@ -1,5 +1,12 @@
 """
-Main decorator for weave tasks on data frames.
+This module implements the '@weave' and '@rethread' decorators.
+
+'@weave' is the primary decorator for defining data transformation tasks
+that create new columns in a DataFrame. It captures metadata about a
+function's inputs, outputs, and parameters.
+
+'@rethread' allows for remapping the input and output names of a weave
+task without altering its core logic, enhancing its reusability.
 """
 
 from dataclasses import replace

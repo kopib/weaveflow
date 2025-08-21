@@ -1,3 +1,6 @@
+"""
+This module defines custom exceptions related to the WeaveMatrix functionality.
+"""
 class InvalidTaskCollectionError(ValueError):
     """Raised when WeaveMatrix receives an invalid or malformed task collection.
 

@@ -1,3 +1,10 @@
+"""
+This module defines the metadata structures used by the decorators.
+
+These dataclasses are designed to be immutable containers for metadata
+attached to decorated functions and classes, ensuring that the metadata
+remains consistent and safe from unintended modifications.
+"""
 from dataclasses import dataclass
 
 

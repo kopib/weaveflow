@@ -1,3 +1,8 @@
+"""
+This module defines the WeaveMatrix class, which provides a tabular,
+matrix-like view of the dependencies between weave tasks and their
+arguments (inputs and outputs).
+"""
 import pandas as pd
 from collections.abc import Mapping
 

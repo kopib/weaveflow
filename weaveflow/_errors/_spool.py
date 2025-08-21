@@ -1,3 +1,7 @@
+"""
+This module defines custom exceptions related to the @spool decorator
+and its associated functionality.
+"""
 class ParamsFromIsNotASpoolError(TypeError):
     """
     Raised when an object passed to 'params_from' is not decorated with @spool.
