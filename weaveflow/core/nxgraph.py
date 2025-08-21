@@ -91,6 +91,12 @@ class _BaseGraph(ABC):
         """Method to build the graph."""
         pass
 
+    @staticmethod
+    def _extract_date_from_collection(node: str, collection: dict[str, dict]) -> str:
+        """Extract delta time from collection if available."""
+        dt = collection[node]["delta_time"] if node in collection else None
+        return f"{dt:,.1f}" if dt else None
+
 
 class WeaveGraph(_BaseGraph):
     """Object to create a final graph for a given pandas weaveflow."""
@@ -172,10 +178,7 @@ class WeaveGraph(_BaseGraph):
             # If left node is weave and produces output
             if self.graph.nodes[n1]["type"] == "weave" and timer:
                 # Extract time of function execution
-                dt = (
-                    weave_collector[n1]["delta_time"] if n1 in weave_collector else None
-                )
-                label = f"{dt:,.1f}" if dt else None
+                label = self._extract_date_from_collection(n1, weave_collector)
                 if label:
                     g.edge(
                         n1,
@@ -234,7 +237,6 @@ class RefineGraph(_BaseGraph):
     def _setup(self, weaveflow_name: str):
 
         refine_collector = self.refine_collector[weaveflow_name]
-
         # Add nodes and edges for each refine task
         for fn, vals in refine_collector.items():
 
@@ -259,12 +261,20 @@ class RefineGraph(_BaseGraph):
                 # Add connection between params_object and refine task
                 self.graph.add_edges_from([(params_object, fn)])
 
-        # Add edges between refine tasks
-        if len(refine_collector) > 1:
-            refine_tasks = list(refine_collector)
-            self.graph.add_edges_from(
-                [(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])]
-            )
+        # Add edges between refine tasks and connect to Start/End
+        refine_tasks = list(refine_collector)
+        if refine_tasks:
+            # Add edges between refine tasks
+            if len(refine_tasks) > 1:
+                self.graph.add_edges_from(
+                    [(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])]
+                )
+
+            # Add Start/End nodes and connect them to the flow
+            _add_graph_nodes(self.graph, "Start DataFrame", type="boundary")
+            _add_graph_nodes(self.graph, "End DataFrame", type="boundary")
+            self.graph.add_edge("Start DataFrame", refine_tasks[0])
+            self.graph.add_edge(refine_tasks[-1], "End DataFrame")
 
     def build(
         self,
@@ -276,12 +286,13 @@ class RefineGraph(_BaseGraph):
 
         self._setup(self.loom.weaveflow_name)
 
+        # Get refine collector for current weaveflow
+        refine_collector = self.refine_collector[self.loom.weaveflow_name]
         clrs = {
             "refine": "#9999ff",
             "obj_param": "#f08080",
             "arg_param": "#ffb6c1",
-            # "on_method": "#99ff99",
-            # "description": "#fbec5d",
+            "boundary": "#fbec5d",
         }
         # Define attributes for final directed graph
         graph_attr = _get_graph_attr(
@@ -300,14 +311,39 @@ class RefineGraph(_BaseGraph):
             )
 
         for n1, n2 in self.graph.edges():
-            # If left node is weave and produces output
-            g.edge(n1, n2)
+            if timer:
+                # Extract time of function execution
+                label = self._extract_date_from_collection(n1, refine_collector)
+                if label:
+                    g.edge(
+                        n1,
+                        n2,
+                        label=label,
+                        fontsize="10",
+                        fontname="Helvetica",
+                        labeldistance="0.5",
+                        decorate="False",
+                    )
+                else:
+                    g.edge(n1, n2)
+            else:
+                g.edge(n1, n2)
 
         if legend:
             _set_graph_legend(
                 g,
-                ["Refine Tasks", "SPool Objects", "SPool Arguments"],
-                list(clrs.values()),
+                [
+                    "Refine Tasks",
+                    "SPool Objects",
+                    "SPool Arguments",
+                    "DataFrame State",
+                ],
+                [
+                    clrs["refine"],
+                    clrs["obj_param"],
+                    clrs["arg_param"],
+                    clrs["boundary"],
+                ],
             )
 
         return g

@@ -269,6 +269,24 @@ class Loom(PandasWeave):
                 raise TypeError(
                     f"Argument 'weave_tasks' contains a non-weave and non-refine task: {task!r}"
                 )
+            
+    def _record_refine_run(
+        self, 
+        refine_task_name: str,
+        on_method: str,
+        params: list[str],
+        params_object: str,
+        description: str,
+        delta_time: float,
+        ) -> None:
+        """Record metadata about the refine run for downstream graph/matrix."""
+        self.refine_collector[self.weaveflow_name][refine_task_name] = {
+            "on_method": on_method,
+            "params": params,
+            "params_object": params_object,
+            "description": description,
+            "delta_time": delta_time,
+        }
 
     def _run_refine_task(self, refine_task: callable) -> None:
         """Run refine task on the database. The data base is modified in-place.
@@ -280,14 +298,19 @@ class Loom(PandasWeave):
         # Get the meta information from refine object
         refine_meta = getattr(refine_task, "_refine_meta")
         refine_name = refine_meta._refine_name
-        self.refine_collector[self.weaveflow_name][refine_name] = {
-            "on_method": refine_meta._on_method,
-            "params": list(refine_meta._params),
-            "params_object": refine_meta._params_object,
-            "description": refine_meta._refine_description,
-        }
         # Run calculation and build the graph
+        t0 = time.perf_counter()
         self.database = refine_task(self.database)
+        dt = time.perf_counter() - t0
+        # Record all relevant information for refine graph
+        self._record_refine_run(
+            refine_task_name=refine_name,
+            on_method=refine_meta._on_method,
+            params=list(refine_meta._params),
+            params_object=refine_meta._params_object,
+            description=refine_meta._refine_description,
+            delta_time=dt,
+        )
 
     def _run(self):
 

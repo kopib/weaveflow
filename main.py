@@ -1,3 +1,5 @@
+import functools
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -12,6 +14,21 @@ set_weaveflow_option(
     ["asset_path", "include_spool"],
     [Path(__file__).parent / "assets/data", "registry"],
 )
+
+
+def delayed(seconds: int = 1):
+    """
+    A decorator that waits a specified number of seconds before
+    executing the decorated function.
+    """
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            time.sleep(seconds)
+            result = f(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
 
 
 def generate_data(seed: int = 42, num_companies: int = 50):
@@ -95,6 +112,7 @@ class CapPERegistry:
 
 
 @wf.weave(outputs=["rf_rate", "erp", "betas"], params_from=MarketData)
+@delayed(seconds=1.2)
 def get_market_data(
     industry: str,
     risk_free_rate: float,
@@ -125,6 +143,7 @@ def get_analyst_ratings(
 @wf.weave(
     outputs=["average_pe_ratio", "average_dividend_yield"], params_from=IndustryMetrics
 )
+@delayed(seconds=1.1)
 def get_industry_metrics(
     industry: str,
     industry_metrics_registry: pd.DataFrame,
@@ -154,6 +173,7 @@ class DataPreprocessor:
         # Filter the DataFrame in a single vectorized operation
         self.df = self.df[self.df["pe_ratio"] <= pe_caps_series]
 
+    @delayed(seconds=1.45)
     def process(self) -> pd.DataFrame:
         """Orchestrates the preprocessing steps."""
         self._remove_missing_values()
@@ -226,7 +246,7 @@ def discounted_cashflow_model(
     return sum_of_present_values, sum_of_present_values - current_price
 
 
-@wf.refine
+@wf.refine # If no on_method is specified, `run` method is used by default
 class UndervaluedData:
 
     def __init__(self, df: pd.DataFrame, margin_of_safety: float = 0.05):
@@ -241,6 +261,7 @@ class UndervaluedData:
         )
         return self.df[m]
 
+    @delayed(seconds=0.5)
     def run(self) -> pd.DataFrame:
         """Get top undervalued company per industry."""
         self.df = self.df.sort_values(by="discount", ascending=True)
@@ -249,7 +270,7 @@ class UndervaluedData:
 
 
 if __name__ == "__main__":
-    df = generate_data(num_companies=100)
+    df = generate_data(num_companies=10_000) # Generate data
 
     loomer = wf.Loom(
         df,
@@ -274,4 +295,4 @@ if __name__ == "__main__":
     weave_matrix.to_csv("assets/output/weave_matrix.csv")
 
     refine_graph = wf.RefineGraph(loomer)
-    # refine_graph.build().render("assets/output/refine_graph", view=True)
+    refine_graph.build(timer=True).render("assets/output/refine_graph", view=True)
