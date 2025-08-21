@@ -42,7 +42,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install uv
         # Install testing tools (like flake8) that might not be in your project dependencies
-        uv pip install --system flake8
+        uv pip install --system flake8 ruff
         # Install the project itself and all its dependencies from pyproject.toml
         uv pip install --system -e .
         
