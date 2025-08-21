@@ -126,7 +126,6 @@ class _BaseGraph(ABC):
                 s.node(node)
 
 
-
 class WeaveGraph(_BaseGraph):
     """Generates and visualizes the dependency graph for 'weave' tasks.
 
@@ -173,7 +172,7 @@ class WeaveGraph(_BaseGraph):
 
     def build(
         self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True,
-        sink_source: bool = False,
+        sink_source: bool = False, 
     ) -> graphviz.Digraph:
         """Builds and returns the Graphviz Digraph object for the weave tasks.
 
@@ -222,14 +221,17 @@ class WeaveGraph(_BaseGraph):
         self._setup(self.loom.weaveflow_name)
 
         weave_collector = self.weave_collector[self.loom.weaveflow_name]
+        # TODO: Make this configurable
+        weave_nodes_style = {
+            "weave": ("box", "#9999ff"),
+            "arg_req": ("box", "#f08080"),
+            "arg_opt": ("box", "#99ff99"),
+            "outputs": ("box", "#fbec5d"),
+            "arg_param": ("box", "#ffb6c1"),
+        }   
+        clrs = {k: v[1] for k, v in weave_nodes_style.items()}
+        shapes = {k: v[0] for k, v in weave_nodes_style.items()}
 
-        clrs = {
-            "weave": "#9999ff",
-            "arg_req": "#f08080",
-            "arg_opt": "#99ff99",
-            "outputs": "#fbec5d",
-            "arg_param": "#ffb6c1",
-        }
         # Define attributes for final directed graph
         graph_attr = _get_graph_attr(
             {
@@ -247,7 +249,7 @@ class WeaveGraph(_BaseGraph):
             self._rank_source_and_sink_nodes(g)
 
         for k, v in self.graph.nodes.items():
-            g.node(k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35")
+            g.node(k, shape=shapes[v["type"]], style="filled", fillcolor=clrs[v["type"]], height="0.35")
 
         for n1, n2 in self.graph.edges():
             # If left node is weave and produces output
@@ -428,12 +430,17 @@ class RefineGraph(_BaseGraph):
 
         # Get refine collector for current weaveflow
         refine_collector = self.refine_collector[self.loom.weaveflow_name]
-        clrs = {
-            "refine": "#9999ff",
-            "obj_param": "#f08080",
-            "arg_param": "#ffb6c1",
-            "boundary": "#fbec5d",
-        }
+
+        # TODO: Make this configurable
+        refine_nodes_style = {
+            "refine": ("box", "#9999ff"),
+            "obj_param": ("box", "#f08080"),
+            "arg_param": ("box", "#ffb6c1"),
+            "boundary": ("box", "#fbec5d"),
+        }   
+        clrs = {k: v[1] for k, v in refine_nodes_style.items()}
+        shapes = {k: v[0] for k, v in refine_nodes_style.items()}
+
         # Define attributes for final directed graph
         graph_attr = _get_graph_attr(
             {
@@ -451,7 +458,7 @@ class RefineGraph(_BaseGraph):
             self._rank_source_and_sink_nodes(g)
 
         for k, v in self.graph.nodes.items():
-            g.node(k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35")
+            g.node(k, shape=shapes[v["type"]], style="filled", fillcolor=clrs[v["type"]], height="0.35")
 
         for n1, n2 in self.graph.edges():
             if timer:
