@@ -3,7 +3,7 @@ This module provides the '@spool' and '@spool_asset' decorators, which
 are used to automatically populate objects with data from configuration files.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 from pathlib import Path
@@ -83,7 +83,7 @@ def _load_default_extensions(custom_engine: dict[str, Any] = None) -> list[str]:
 
 def _load_config_data(
     *,
-    obj: callable = None,
+    obj: Callable = None,
     path: str = None,
     exclude: Iterable[str] = None,
     include: Iterable[str] = None,
@@ -195,26 +195,110 @@ def _file_feeder(path: str):
 
 
 def spool(
-    _func: callable = None,
+    _func: Callable = None,
     *,
-    custom_engine: callable = None,
+    custom_engine: Callable = None,
     feed_file: str = None,
     file: str = None,
     path: str = None,
     exclude: Iterable[str] = None,
     include: Iterable[str] = None,
-) -> callable:
+) -> Callable:
     """
     A decorator that auto-populates an object from config files.
 
-    - If applied to a class, it wraps __init__ to populate the instance.
-    - If applied to a function, it returns a populated InputRegistry instance.
+    This decorator reads data from configuration files (JSON, YAML, TOML, or custom)
+    located in a specified path and injects this data into the decorated object.
+
+    If applied to a class:
+        It wraps the `__init__` method of the class. When an instance of the
+        class is created, data from the config files is loaded and passed as
+        keyword arguments to the original `__init__` method. Any `kwargs`
+        provided during instantiation will override values from the config files.
+
+    If applied to a function:
+        It wraps the function to return an `SPoolRegistry` instance. This
+        `SPoolRegistry` will contain the data loaded from the config files,
+        accessible as attributes. The function's required arguments must be
+        present in the loaded data.
+
+    Args:
+        _func (Callable | None, optional): The function or class to be decorated.
+            This argument is automatically populated when `@spool` is used without
+            parentheses (e.g., `@spool`). Defaults to None.
+        custom_engine (Callable | None, optional): A dictionary mapping file
+            extensions (e.g., "csv") to custom reader functions (e.g., `pd.read_csv`).
+            This allows `spool` to load data from formats not natively supported.
+            Defaults to None.
+        feed_file (str | None, optional): A specific file path to load data from.
+            If provided, `path`, `exclude`, and `include` are ignored. Defaults to None.
+        file (str | None, optional): The name of a specific file (e.g., "my_config.json")
+            within the `path` to load data from. Defaults to None.
+        path (str | None, optional): The directory path where configuration files
+            are located. If not provided, the directory of the decorated object's
+            file is used. Defaults to None.
+        exclude (Iterable[str] | None, optional): A list of strings. Files whose
+            names contain any of these strings will be excluded from loading.
+            Cannot be used with `include`. Defaults to None.
+        include (Iterable[str] | None, optional): A list of strings. Only files
+            whose names contain any of these strings will be included for loading.
+            Cannot be used with `exclude`. Defaults to None.
+
+    Returns:
+        Callable: The decorated function or class.
+
+    Raises:
+        ValueError: If both `exclude` and `include` are specified.
+        ValueError: If both `specific_file` and `exclude`/`include` are specified.
+        TypeError: If `custom_engine` is not a dictionary or its values are not callables.
+        FileNotFoundError: If the specified `path` or `file` does not exist, or
+                           if no config files are found in the specified directory.
+        ValueError: If config files are found but contain no data.
+        ValueError: If a required argument for a decorated function is not found in the config.
+
+    Example:
+        ```python
+        from dataclasses import dataclass
+        import weaveflow as wf
+        import pandas as pd
+
+
+        # Example 1: Spooling a class with default config files
+        # Assumes 'assets/data/market_data.yaml' exists
+        @wf.spool_asset
+        @dataclass
+        class MarketData:
+            risk_free_rate: float
+            equity_risk_premium: float
+            industry_betas: dict[str, float]
+
+
+        # Example 2: Spooling a class with a custom engine for CSV files
+        # Assumes 'assets/data/analyst_ratings.csv' exists
+        @wf.spool_asset(custom_engine={"csv": pd.read_csv})
+        @dataclass
+        class AnalystRatings:
+            analyst_ratings_registry: dict[str, pd.DataFrame]
+
+
+        # Example 3: Spooling a function
+        @wf.spool(file="my_function_params.json")
+        def get_function_params(param1: str, param2: int):
+            # This function will return an SPoolRegistry instance
+            # containing param1 and param2 from 'my_function_params.json'
+            pass
+
+
+        # To use the spooled function:
+        # params = get_function_params()
+        # print(params.param1)
+        ```
     """
 
-    def decorator(func_or_class: callable) -> callable:
+    def decorator(func_or_class: Callable) -> Callable:
         setattr(func_or_class, "_spool", True)
 
-        # --- Handle class decoration ---
+        # Handle class decoration
         if isclass(func_or_class):
             original_init = func_or_class.__init__
 
@@ -243,7 +327,7 @@ def spool(
 
             return func_or_class
 
-        # -- Handle function decoration ---
+        # Handle function decoration
         else:
 
             @functools.wraps(func_or_class)
@@ -280,10 +364,10 @@ def spool(
 
 
 def spool_asset(
-    _func: callable = None,
+    _func: Callable = None,
     *,
     file: str = None,
-    custom_engine: callable = None,
+    custom_engine: Callable = None,
 ):
     """
     A wrapper for 'spool' that reads from a pre-configured asset path.

@@ -3,7 +3,6 @@ This module implements the '@refine' decorator, which is designed for
 tasks that perform sequential, in-place transformations on a DataFrame.
 """
 
-from dataclasses import replace
 import functools
 import inspect
 from typing import Any, Callable
@@ -25,7 +24,57 @@ def refine(
     on_method: str = None,
     params_from: Any = None,
 ) -> Callable:
-    """A smart decorator for DataFrame transformation tasks."""
+    """Decorator to mark a function or class as a 'refine' task for DataFrame transformations.
+
+    Refine tasks are designed for sequential, in-place transformations on a DataFrame,
+    such as cleaning, filtering, or grouping. When decorating a class, the `on_method`
+    parameter specifies which method within the class should be executed as the
+    refinement logic. Parameters can be injected from `@spool` decorated objects.
+
+    Args:
+        _func (Callable | None, optional): The function or class to be decorated.
+            This argument is automatically populated when `@refine` is used without
+            parentheses (e.g., `@refine`). Defaults to None.
+        description (str | None, optional): A brief description of the refine task.
+            This metadata can be used for documentation or visualization. Defaults to None.
+        on_method (str | None, optional): The name of the method within a decorated
+            class that should be executed as the refine task. If decorating a function,
+            this argument is not allowed. Defaults to "run" if decorating a class
+            and not explicitly provided.
+        params_from (Any | None, optional): An object decorated with `@spool`
+            from which to extract additional parameters for the function or class's
+            `__init__` method (for classes) or the function itself (for functions).
+            Defaults to None.
+
+    Returns:
+        Callable: The decorated function or a wrapper around the decorated class,
+            enhanced with refine metadata.
+
+    Raises:
+        ValueError: If `on_method` is provided when decorating a function.
+        AttributeError: If decorating a class and the specified `on_method` does not exist.
+        TypeError: If `params_from` is provided but the object is not
+                   decorated with `@spool`.
+
+    Example:
+        ```python
+        import pandas as pd
+        import weaveflow as wf
+
+
+        @wf.refine(on_method="process", description="Orchestrates the preprocessing steps.")
+        class DataPreprocessor:
+            def __init__(self, df: pd.DataFrame):
+                self.df = df
+
+            def _remove_missing_values(self):
+                self.df.dropna(subset=["pe_ratio"], inplace=True)
+
+            def process(self) -> pd.DataFrame:
+                self._remove_missing_values()
+                return self.df
+        ```
+    """
     ParamsFromIsNotASpoolError(params_from)
     _on_method_arg = on_method
 

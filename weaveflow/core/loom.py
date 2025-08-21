@@ -235,7 +235,30 @@ class PandasWeave(_BaseWeave):
 
 
 class Loom(PandasWeave):
-    """Loom class."""
+    """The central orchestrator for executing weaveflow pipelines on pandas DataFrames.
+
+    Loom manages the execution of both `@weave` (column-wise transformations)
+    and `@refine` (DataFrame-wide transformations) tasks in the correct order,
+    handling data flow, parameter injection, and metadata collection for
+    graph visualization.
+
+    It extends `PandasWeave` to incorporate `refine` tasks and provides a
+    unified interface for running complex data processing workflows.
+
+    Attributes:
+        database (pd.DataFrame): The pandas DataFrame on which the tasks operate.
+        tasks (Iterable[Callable]): A list of `@weave` and `@refine` decorated
+            functions or classes that constitute the pipeline.
+        weaveflow_name (str): A unique name for this specific weaveflow pipeline,
+            used for organizing collected metadata.
+        optionals (dict[str, dict[str]]): A dictionary to provide optional
+            arguments to specific weave tasks. Keys are task names, values are
+            dictionaries of optional arguments.
+        kwargs (Any): Additional keyword arguments passed to the Loom
+            constructor, which are treated as global optional parameters
+            available to weave tasks.
+        refine_collector (defaultdict): Stores metadata about executed refine tasks.
+    """
 
     def __init__(
         self,
@@ -245,6 +268,18 @@ class Loom(PandasWeave):
         optionals: dict[str, dict[str]] = None,
         **kwargs,
     ):
+        """Initializes the Loom orchestrator.
+
+        Args:
+            database (pd.DataFrame): The initial DataFrame to process.
+            tasks (Iterable[Callable]): A sequence of `@weave` and `@refine`
+                decorated functions or classes to be executed.
+            weaveflow_name (str, optional): A name for this pipeline instance.
+                Defaults to "default".
+            optionals (dict[str, dict[str]] | None, optional): Task-specific
+                optional arguments. Defaults to None.
+            **kwargs: Global optional arguments accessible by weave tasks.
+        """
         all_tasks = list(tasks)
         # Filter only weave tasks
         filtered_weave_tasks = [task for task in tasks if _is_weave(task)]

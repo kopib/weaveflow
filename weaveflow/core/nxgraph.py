@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Union
 import graphviz
 
+from pandas import DataFrame
 import networkx as nx
 from weaveflow.core.loom import Loom, _BaseWeave
 from weaveflow.core._matrix import WeaveMatrix
@@ -107,9 +108,23 @@ class _BaseGraph(ABC):
 
 
 class WeaveGraph(_BaseGraph):
-    """Object to create a final graph for a given pandas weaveflow."""
+    """Generates and visualizes the dependency graph for 'weave' tasks.
+
+    This class uses networkx to build a directed graph representing the flow
+    of data through `weave` tasks within a `Loom` instance. It highlights
+    inputs, outputs, and parameters, and can optionally display execution times.
+
+    Attributes:
+        loom (Loom): The Loom instance containing the executed weave tasks.
+        weave_collector (defaultdict): A collection of metadata for weave tasks.
+    """
 
     def __init__(self, loom: Loom):
+        """Initializes the WeaveGraph with a Loom instance.
+
+        Args:
+            loom (Loom): The Loom instance whose weave tasks will be visualized.
+        """
         super().__init__(loom)
         self.weave_collector = loom.weave_collector
 
@@ -137,19 +152,46 @@ class WeaveGraph(_BaseGraph):
             self.graph.add_edges_from([(fn, v) for v in outputs])
 
     def build(
-        self,
-        size: int = 12,
-        timer: bool = False,
-        mindist: float = 1.2,
-        legend: bool = True,
-    ):
-        """Plots final graph for a given weaveflow.
+        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True
+    ) -> graphviz.Digraph:
+        """Builds and returns the Graphviz Digraph object for the weave tasks.
+
+        This method constructs a visual representation of the weave task
+        dependencies, showing how data flows between different operations.
 
         Args:
-            size (int): Size of figure. Defaults to 12.
-            timer (bool): Flag whether timer should also be plotted. Defaults to False.
-            mindist (float): Minimum distance between nodes. Defaults to 1.2.
-            legend (bool): Legend for graph. Defaults to True.
+            size (int, optional): The size of the graph in inches (e.g., "12,12!").
+                Defaults to 12.
+            timer (bool, optional): If True, displays the execution time for
+                each weave task on the edges connecting to its outputs.
+                Defaults to False.
+            mindist (float, optional): Minimum distance between nodes in the graph.
+                Adjusting this can help with graph layout. Defaults to 1.2.
+            legend (bool, optional): If True, includes a color-coded legend
+                explaining the different node types (e.g., required inputs, outputs).
+                Defaults to True.
+
+        Returns:
+            graphviz.Digraph: A Graphviz Digraph object representing the weave graph.
+                This object can be rendered to various image formats (e.g., PNG, SVG)
+                using its `.render()` method.
+
+        Example:
+            ```python
+            import pandas as pd
+            import weaveflow as wf
+
+            # Assume 'loomer' is an initialized and run Loom instance
+            # from a pipeline with weave tasks.
+            # For example:
+            # df = pd.DataFrame(...)
+            # loomer = wf.Loom(df, tasks=[my_weave_task_1, my_weave_task_2])
+            # loomer.run()
+
+            weave_graph = wf.WeaveGraph(loomer)
+            g = weave_graph.build(timer=True, size=20)
+            g.render("assets/output/graphs/weave_graph", format="png", cleanup=True)
+            ```
 
         Returns:
             graphviz.Digraph: Plotted graph.
@@ -216,12 +258,26 @@ class WeaveGraph(_BaseGraph):
 
         return g
 
-    def build_matrix(self) -> WeaveMatrix:
+    def build_matrix(self) -> DataFrame:
         """Construct and return a WeaveMatrix for the current weaveflow.
+
+        The matrix provides a tabular view of the dependencies between weave
+        tasks and their arguments (inputs and outputs).
 
         The matrix is built only from weave tasks. If refine entries exist in
         the weave_collector (due to upstream population), they are filtered out
         by requiring the presence of the "outputs" key.
+
+        Returns:
+            pd.DataFrame: A pandas DataFrame representing the WeaveMatrix.
+
+        Example:
+            ```python
+            # Assuming 'loomer' is an initialized and run Loom instance
+            weave_graph = wf.WeaveGraph(loomer)
+            weave_matrix = weave_graph.build_matrix()
+            print(weave_matrix.head())
+            ```
         """
         weaveflow_name = self.loom.weaveflow_name
         task_collection = self.weave_collector.get(weaveflow_name, {})
@@ -235,7 +291,23 @@ class WeaveGraph(_BaseGraph):
 
 
 class RefineGraph(_BaseGraph):
+    """Generates and visualizes the sequential flow graph for 'refine' tasks.
+
+    This class uses networkx to build a directed graph representing the ordered
+    execution of `refine` tasks within a `Loom` instance. It shows the flow
+    from an initial DataFrame state through various refinement steps to a final state.
+
+    Attributes:
+        loom (Loom): The Loom instance containing the executed refine tasks.
+        refine_collector (defaultdict): A collection of metadata for refine tasks.
+    """
+
     def __init__(self, loom: Loom):
+        """Initializes the RefineGraph with a Loom instance.
+
+        Args:
+            loom (Loom): The Loom instance whose refine tasks will be visualized.
+        """
         super().__init__(loom)
         self.refine_collector = loom.refine_collector
 
@@ -278,12 +350,46 @@ class RefineGraph(_BaseGraph):
             self.graph.add_edge(refine_tasks[-1], "End DataFrame")
 
     def build(
-        self,
-        size: int = 12,  # TODO: Make intelligent sizing depending on the number of tasks
-        timer: bool = False,
-        mindist: float = 1.2,
-        legend: bool = True,
-    ):
+        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True
+    ) -> graphviz.Digraph:
+        """Builds and returns the Graphviz Digraph object for the refine tasks.
+
+        This method constructs a visual representation of the sequential refine
+        tasks, showing the order of operations on the DataFrame.
+
+        Args:
+            size (int, optional): The size of the graph in inches (e.g., "12,12!").
+                Defaults to 12.
+                TODO: Implement intelligent sizing based on the number of tasks.
+            timer (bool, optional): If True, displays the execution time for
+                each refine task on the edges between tasks. Defaults to False.
+            mindist (float, optional): Minimum distance between nodes in the graph.
+                Adjusting this can help with graph layout. Defaults to 1.2.
+            legend (bool, optional): If True, includes a color-coded legend
+                explaining the different node types (e.g., refine tasks, spool objects).
+                Defaults to True.
+
+        Returns:
+            graphviz.Digraph: A Graphviz Digraph object representing the refine graph.
+                This object can be rendered to various image formats (e.g., PNG, SVG)
+                using its `.render()` method.
+
+        Example:
+            ```python
+            import pandas as pd
+            import weaveflow as wf
+
+            # Assume 'loomer' is an initialized and run Loom instance
+            # from a pipeline with refine tasks.
+            # df = pd.DataFrame(...)
+            # loomer = wf.Loom(df, tasks=[my_refine_task_1, my_refine_task_2])
+            # loomer.run()
+
+            refine_graph = wf.RefineGraph(loomer)
+            g = refine_graph.build(timer=True)
+            g.render("assets/output/graphs/refine_graph", format="png", cleanup=True)
+            ```
+        """
         self._setup(self.loom.weaveflow_name)
 
         # Get refine collector for current weaveflow
