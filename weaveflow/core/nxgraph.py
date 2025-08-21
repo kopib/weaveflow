@@ -12,7 +12,7 @@ import graphviz
 
 from pandas import DataFrame
 import networkx as nx
-from weaveflow.core.loom import Loom, _BaseWeave
+from weaveflow.core.loom import Loom
 from weaveflow.core._matrix import WeaveMatrix
 
 
@@ -239,6 +239,10 @@ class WeaveGraph(_BaseGraph):
                     )
                 else:
                     g.edge(n1, n2)
+                    
+            elif self.graph.nodes[n1]["type"] == "arg_opt":
+                g.edge(n1, n2, style="dashed")
+
             else:
                 g.edge(n1, n2)
 
