@@ -105,6 +105,26 @@ class _BaseGraph(ABC):
         """Extract delta time from collection if available."""
         dt = collection[node]["delta_time"] if node in collection else None
         return f"{dt:,.1f}" if dt else None
+    
+    def _rank_source_and_sink_nodes(self, g: graphviz.Digraph) -> None:
+        """
+        Identify and rank source and sink nodes. Can improve readability of the graph.
+        However, it can also make the graph look cluttered, so use with caution. 
+        """
+        # Identify and rank source and sink nodes
+        source_nodes = [n for n, d in self.graph.in_degree() if d == 0]
+        sink_nodes = [n for n, d in self.graph.out_degree() if d == 0]
+
+        with g.subgraph() as s:
+            s.attr(rank="source")
+            for node in source_nodes:
+                s.node(node)
+
+        with g.subgraph() as s:
+            s.attr(rank="sink")
+            for node in sink_nodes:
+                s.node(node)
+
 
 
 class WeaveGraph(_BaseGraph):
@@ -152,7 +172,8 @@ class WeaveGraph(_BaseGraph):
             self.graph.add_edges_from([(fn, v) for v in outputs])
 
     def build(
-        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True
+        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True,
+        sink_source: bool = False,
     ) -> graphviz.Digraph:
         """Builds and returns the Graphviz Digraph object for the weave tasks.
 
@@ -170,6 +191,8 @@ class WeaveGraph(_BaseGraph):
             legend (bool, optional): If True, includes a color-coded legend
                 explaining the different node types (e.g., required inputs, outputs).
                 Defaults to True.
+            sink_source (bool, optional): If True, ranks source and sink nodes.
+                Defaults to False.
 
         Returns:
             graphviz.Digraph: A Graphviz Digraph object representing the weave graph.
@@ -218,6 +241,10 @@ class WeaveGraph(_BaseGraph):
         )
 
         g = graphviz.Digraph(graph_attr=graph_attr)
+
+        # Rank source and sink nodes if specified
+        if sink_source:
+            self._rank_source_and_sink_nodes(g)
 
         for k, v in self.graph.nodes.items():
             g.node(k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35")
@@ -354,7 +381,8 @@ class RefineGraph(_BaseGraph):
             self.graph.add_edge(refine_tasks[-1], "End DataFrame")
 
     def build(
-        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True
+        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True,
+        sink_source: bool = False,
     ) -> graphviz.Digraph:
         """Builds and returns the Graphviz Digraph object for the refine tasks.
 
@@ -372,6 +400,8 @@ class RefineGraph(_BaseGraph):
             legend (bool, optional): If True, includes a color-coded legend
                 explaining the different node types (e.g., refine tasks, spool objects).
                 Defaults to True.
+            sink_source (bool, optional): If True, ranks source and sink nodes. 
+                Defaults to False.
 
         Returns:
             graphviz.Digraph: A Graphviz Digraph object representing the refine graph.
@@ -415,6 +445,10 @@ class RefineGraph(_BaseGraph):
         )
 
         g = graphviz.Digraph(graph_attr=graph_attr)
+
+        # Rank source and sink nodes if specified
+        if sink_source:
+            self._rank_source_and_sink_nodes(g)
 
         for k, v in self.graph.nodes.items():
             g.node(k, shape="box", style="filled", fillcolor=clrs[v["type"]], height="0.35")

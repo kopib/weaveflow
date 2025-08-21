@@ -181,7 +181,7 @@ def calculate_cost_of_equity(rf_rate: float, erp: float, betas: float) -> float:
 
 
 @wf.weave("cost_of_debt")
-def cost_of_debt(rf_rate: float, addon: float = 1.5) -> float:
+def get_cost_of_debt(rf_rate: float, addon: float = 1.5) -> float:
     return rf_rate + addon
 
 
@@ -269,7 +269,7 @@ if __name__ == "__main__":
             get_industry_metrics,
             DataPreprocessor,
             calculate_cost_of_equity,
-            cost_of_debt,
+            get_cost_of_debt,
             calculate_wacc,
             discounted_cashflow_model,
             UndervaluedData,
@@ -279,12 +279,12 @@ if __name__ == "__main__":
     loomer.run()
 
     weave_graph = wf.WeaveGraph(loomer)
-    g = weave_graph.build(timer=True, size=20)
+    g = weave_graph.build(timer=True, size=20, sink_source=False)
     g.render("assets/output/graphs/weave_graph", format="png", cleanup=True)
 
     weave_matrix: pd.DataFrame = weave_graph.build_matrix()
     weave_matrix.to_csv("assets/output/matrix/weave_matrix.csv")
 
     refine_graph = wf.RefineGraph(loomer)
-    g = refine_graph.build(timer=True)
+    g = refine_graph.build(timer=True, sink_source=False)
     g.render("assets/output/graphs/refine_graph", format="png", cleanup=True)
