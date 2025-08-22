@@ -105,11 +105,24 @@ class _BaseGraph(ABC):
         """Extract delta time from collection if available."""
         dt = collection[node]["delta_time"] if node in collection else None
         return f"{dt:,.1f}" if dt else None
-    
+
+    def _style_graph_nodes(self, g: graphviz.Digraph, shapes: dict, colors: dict):
+        """Applies styles (shape, color) to all nodes in the graph."""
+        for k, v in self.graph.nodes.items():
+            node_type = v.get("type")
+            if node_type in shapes:
+                g.node(
+                    k,
+                    shape=shapes[node_type],
+                    style="filled",
+                    fillcolor=colors[node_type],
+                    height="0.35",
+                )
+
     def _rank_source_and_sink_nodes(self, g: graphviz.Digraph) -> None:
         """
         Identify and rank source and sink nodes. Can improve readability of the graph.
-        However, it can also make the graph look cluttered, so use with caution. 
+        However, it can also make the graph look cluttered, so use with caution.
         """
         # Identify and rank source and sink nodes
         source_nodes = [n for n, d in self.graph.in_degree() if d == 0]
@@ -170,9 +183,54 @@ class WeaveGraph(_BaseGraph):
             self.graph.add_edges_from([(v, fn) for v in oargs])
             self.graph.add_edges_from([(fn, v) for v in outputs])
 
+    def _create_task_clusters(self, g: graphviz.Digraph, weave_collector: dict):
+        """Creates a visually distinct cluster for each weave task."""
+        # TODO: Fix warning
+        for fn, vals in weave_collector.items():
+            with g.subgraph(name=f"cluster_{fn}") as c:
+                c.attr(
+                    label=fn,
+                    style="rounded",
+                    color="gray",
+                    fontcolor="gray",
+                    fontsize="10",
+                )
+                # Add the main task node and its direct parameter nodes to the cluster
+                c.node(fn)
+                for p_node in vals.get("params", []):
+                    c.node(p_node)
+
+    def _style_graph_edges(self, g: graphviz.Digraph, weave_collector: dict, timer: bool):
+        """Applies styles (dashed, labels) to all edges in the graph."""
+        for n1, n2 in self.graph.edges():
+            edge_attrs = {}
+            node1_type = self.graph.nodes[n1].get("type")
+
+            if node1_type == "arg_opt":
+                edge_attrs["style"] = "dashed"
+
+            if node1_type == "weave" and timer:
+                label = self._extract_date_from_collection(n1, weave_collector)
+                if label:
+                    edge_attrs.update(
+                        {
+                            "label": label,
+                            "fontsize": "10",
+                            "fontname": "Helvetica",
+                            "labeldistance": "0.5",
+                            "decorate": "False",
+                        }
+                    )
+            g.edge(n1, n2, **edge_attrs)
+
     def build(
-        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True,
-        sink_source: bool = False, 
+        self,
+        size: int = 12,
+        timer: bool = False,
+        mindist: float = 1.2,
+        legend: bool = True,
+        sink_source: bool = False,
+        cluster_tasks: bool = False,
     ) -> graphviz.Digraph:
         """Builds and returns the Graphviz Digraph object for the weave tasks.
 
@@ -192,6 +250,8 @@ class WeaveGraph(_BaseGraph):
                 Defaults to True.
             sink_source (bool, optional): If True, ranks source and sink nodes.
                 Defaults to False.
+            cluster_tasks (bool, optional): If True, groups each weave task and
+                its parameters into a distinct visual cluster. Defaults to True.
 
         Returns:
             graphviz.Digraph: A Graphviz Digraph object representing the weave graph.
@@ -228,7 +288,7 @@ class WeaveGraph(_BaseGraph):
             "arg_opt": ("box", "#99ff99"),
             "outputs": ("box", "#fbec5d"),
             "arg_param": ("box", "#ffb6c1"),
-        }   
+        }
         clrs = {k: v[1] for k, v in weave_nodes_style.items()}
         shapes = {k: v[0] for k, v in weave_nodes_style.items()}
 
@@ -248,34 +308,15 @@ class WeaveGraph(_BaseGraph):
         if sink_source:
             self._rank_source_and_sink_nodes(g)
 
-        for k, v in self.graph.nodes.items():
-            g.node(k, shape=shapes[v["type"]], style="filled", fillcolor=clrs[v["type"]], height="0.35")
+        # Create clusters for each weave task
+        if cluster_tasks:
+            self._create_task_clusters(g, weave_collector)
 
-        for n1, n2 in self.graph.edges():
-            # If left node is weave and produces output
-            if self.graph.nodes[n1]["type"] == "weave" and timer:
-                # Extract time of function execution
-                label = self._extract_date_from_collection(n1, weave_collector)
-                if label:
-                    g.edge(
-                        n1,
-                        n2,
-                        label=label,
-                        fontsize="10",
-                        fontname="Helvetica",
-                        labeldistance="0.5",
-                        decorate="False",
-                    )
-                else:
-                    g.edge(n1, n2)
-                    
-            elif self.graph.nodes[n1]["type"] == "arg_opt":
-                g.edge(n1, n2, style="dashed")
+        # Style nodes and edges
+        self._style_graph_nodes(g, shapes, clrs)
+        self._style_graph_edges(g, weave_collector, timer)
 
-            else:
-                g.edge(n1, n2)
-
-        # Plot legend if specified
+        # Add legend if specified
         if legend:
             _set_graph_legend(
                 g,
@@ -363,28 +404,77 @@ class RefineGraph(_BaseGraph):
             # TODO: Intergate on_method argument as label
             # TODO: Add timer to edges between tasks
 
-            if params:
+            if params and params_object:
                 # Add connection between params (config file args) and params_object
-                self.graph.add_edges_from([(v, params_object) for v in params])
+                self.graph.add_edges_from([(v, params_object) for v in params], flow="data")
                 # Add connection between params_object and refine task
-                self.graph.add_edges_from([(params_object, fn)])
+                self.graph.add_edge(params_object, fn, flow="data")
 
         # Add edges between refine tasks and connect to Start/End
         refine_tasks = list(refine_collector)
         if refine_tasks:
             # Add edges between refine tasks
             if len(refine_tasks) > 1:
-                self.graph.add_edges_from([(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])])
+                self.graph.add_edges_from(
+                    [(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])],
+                    flow="control",
+                )
 
             # Add Start/End nodes and connect them to the flow
             _add_graph_nodes(self.graph, "Start DataFrame", type="boundary")
             _add_graph_nodes(self.graph, "End DataFrame", type="boundary")
-            self.graph.add_edge("Start DataFrame", refine_tasks[0])
-            self.graph.add_edge(refine_tasks[-1], "End DataFrame")
+            self.graph.add_edge("Start DataFrame", refine_tasks[0], flow="control")
+            self.graph.add_edge(refine_tasks[-1], "End DataFrame", flow="control")
+
+    def _create_task_clusters(self, g: graphviz.Digraph, refine_collector: dict) -> None:
+        """Creates a visually distinct cluster for each refine task."""
+        for fn, vals in refine_collector.items():
+            with g.subgraph(name=f"cluster_{fn}") as c:
+                c.attr(
+                    label=fn,
+                    style="rounded",
+                    color="gray",
+                    fontcolor="gray",
+                    fontsize="10",
+                )
+                # Add the main task node and its parameter objects to the cluster
+                c.node(fn)
+                if vals.get("params_object"):
+                    c.node(vals["params_object"])
+                for p_node in vals.get("params", []):
+                    c.node(p_node)
+
+    def _style_graph_edges(self, g: graphviz.Digraph, refine_collector: dict, timer: bool):
+        """Applies styles (penwidth, labels) to all edges in the graph."""
+        for n1, n2 in self.graph.edges():
+            edge_attrs = {}
+            edge_data = self.graph.edges[n1, n2]
+
+            if edge_data.get("flow") == "control":
+                edge_attrs["penwidth"] = "2.0"
+
+            if timer:
+                label = self._extract_date_from_collection(n1, refine_collector)
+                if label:
+                    edge_attrs.update(
+                        {
+                            "label": label,
+                            "fontsize": "10",
+                            "fontname": "Helvetica",
+                            "labeldistance": "0.5",
+                            "decorate": "False",
+                        }
+                    )
+            g.edge(n1, n2, **edge_attrs)
 
     def build(
-        self, size: int = 12, timer: bool = False, mindist: float = 1.2, legend: bool = True,
+        self,
+        size: int = 12,
+        timer: bool = False,
+        mindist: float = 1.2,
+        legend: bool = True,
         sink_source: bool = False,
+        cluster_tasks: bool = False,
     ) -> graphviz.Digraph:
         """Builds and returns the Graphviz Digraph object for the refine tasks.
 
@@ -402,8 +492,10 @@ class RefineGraph(_BaseGraph):
             legend (bool, optional): If True, includes a color-coded legend
                 explaining the different node types (e.g., refine tasks, spool objects).
                 Defaults to True.
-            sink_source (bool, optional): If True, ranks source and sink nodes. 
+            sink_source (bool, optional): If True, ranks source and sink nodes.
                 Defaults to False.
+            cluster_tasks (bool, optional): If True, groups each refine task and
+                its parameters into a distinct visual cluster. Defaults to True.
 
         Returns:
             graphviz.Digraph: A Graphviz Digraph object representing the refine graph.
@@ -437,7 +529,7 @@ class RefineGraph(_BaseGraph):
             "obj_param": ("box", "#f08080"),
             "arg_param": ("box", "#ffb6c1"),
             "boundary": ("box", "#fbec5d"),
-        }   
+        }
         clrs = {k: v[1] for k, v in refine_nodes_style.items()}
         shapes = {k: v[0] for k, v in refine_nodes_style.items()}
 
@@ -457,27 +549,13 @@ class RefineGraph(_BaseGraph):
         if sink_source:
             self._rank_source_and_sink_nodes(g)
 
-        for k, v in self.graph.nodes.items():
-            g.node(k, shape=shapes[v["type"]], style="filled", fillcolor=clrs[v["type"]], height="0.35")
+        # Create clusters for each refine task
+        if cluster_tasks:
+            self._create_task_clusters(g, refine_collector)
 
-        for n1, n2 in self.graph.edges():
-            if timer:
-                # Extract time of function execution
-                label = self._extract_date_from_collection(n1, refine_collector)
-                if label:
-                    g.edge(
-                        n1,
-                        n2,
-                        label=label,
-                        fontsize="10",
-                        fontname="Helvetica",
-                        labeldistance="0.5",
-                        decorate="False",
-                    )
-                else:
-                    g.edge(n1, n2)
-            else:
-                g.edge(n1, n2)
+        # Style nodes and edges
+        self._style_graph_nodes(g, shapes, clrs)
+        self._style_graph_edges(g, refine_collector, timer)
 
         if legend:
             _set_graph_legend(
