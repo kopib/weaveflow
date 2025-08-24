@@ -7,16 +7,16 @@ the data processing pipeline.
 """
 
 from abc import ABC, abstractmethod
-from typing import Union
+
 import graphviz
-
-from pandas import DataFrame
 import networkx as nx
-from .loom import Loom
+from pandas import DataFrame
+
 from ._matrix import WeaveMatrix
+from .loom import Loom
 
 
-def _get_graph_attr(attrs: dict[str, str] = None):
+def _get_graph_attr(attrs: dict[str, str] | None = None):
     """Get graph attributes with optional overrides."""
     graph_attr = {
         "rankdir": "LR",
@@ -29,7 +29,7 @@ def _get_graph_attr(attrs: dict[str, str] = None):
     return graph_attr | (attrs or {})
 
 
-def _add_graph_nodes(graph: nx.DiGraph, nodes: Union[str, list[str]], **attrs) -> None:
+def _add_graph_nodes(graph: nx.DiGraph, nodes: str | list[str], **attrs) -> None:
     """Updates edges in graph. Throws an error if a key is present and values don't match.
 
     Args:
@@ -69,7 +69,7 @@ def _set_graph_legend(
             ranksep="0.01",
             padding="0.05",
         )
-        for name, color in zip(names, colors):
+        for name, color in zip(names, colors, strict=False):
             c.node(
                 name,
                 shape="box",
@@ -406,7 +406,9 @@ class RefineGraph(_BaseGraph):
 
             if params and params_object:
                 # Add connection between params (config file args) and params_object
-                self.graph.add_edges_from([(v, params_object) for v in params], flow="data")
+                self.graph.add_edges_from(
+                    [(v, params_object) for v in params], flow="data"
+                )
                 # Add connection between params_object and refine task
                 self.graph.add_edge(params_object, fn, flow="data")
 
@@ -416,7 +418,7 @@ class RefineGraph(_BaseGraph):
             # Add edges between refine tasks
             if len(refine_tasks) > 1:
                 self.graph.add_edges_from(
-                    [(i, j) for i, j in zip(refine_tasks, refine_tasks[1:])],
+                    [(i, j) for i, j in zip(refine_tasks, refine_tasks[1:], strict=False)],
                     flow="control",
                 )
 

@@ -13,4 +13,10 @@ def f2(x1: float, x4: float, y1: float, c2: float = 10.0):
 
 
 def test_weave_inference():
-    assert (PandasWeave._infer_columns_from_weaves([f1, f2])) == {"x1", "x2", "x3", "x4", "y1"}
+    assert (PandasWeave._infer_columns_from_weaves([f1, f2])) == {
+        "x1",
+        "x2",
+        "x3",
+        "x4",
+        "y1",
+    }

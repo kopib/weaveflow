@@ -3,14 +3,19 @@ This module provides the '@spool' and '@spool_asset' decorators, which
 are used to automatically populate objects with data from configuration files.
 """
 
-from collections.abc import Iterable, Callable
-from dataclasses import dataclass, field
-from typing import Any
-from pathlib import Path
-from inspect import isclass, signature
 import functools
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass, field
+from inspect import isclass, signature
+from pathlib import Path
+from typing import Any
 
-from weaveflow._utils import _get_function_args, _get_option, _load_config_data, _file_feeder
+from weaveflow._utils import (
+    _file_feeder,
+    _get_function_args,
+    _get_option,
+    _load_config_data,
+)
 
 
 @dataclass
@@ -43,14 +48,14 @@ class SPoolRegistry:
 
 
 def spool(
-    _func: Callable = None,
+    _func: Callable | None = None,
     *,
-    custom_engine: Callable = None,
-    feed_file: str = None,
-    file: str = None,
-    path: str = None,
-    exclude: Iterable[str] = None,
-    include: Iterable[str] = None,
+    custom_engine: Callable | None = None,
+    feed_file: str | None = None,
+    file: str | None = None,
+    path: str | None = None,
+    exclude: Iterable[str] | None = None,
+    include: Iterable[str] | None = None,
 ) -> Callable:
     """
     A decorator that auto-populates an object from config files.
@@ -144,7 +149,7 @@ def spool(
     """
 
     def decorator(func_or_class: Callable) -> Callable:
-        setattr(func_or_class, "_spool", True)
+        func_or_class._spool = True
 
         # Handle class decoration
         if isclass(func_or_class):
@@ -161,7 +166,7 @@ def spool(
                     include=include,
                     custom_engine=custom_engine,
                 )
-                setattr(func_or_class, "_spool_meta", loaded_data)
+                func_or_class._spool_meta = loaded_data
                 # Combine loaded data with runtime kwargs (runtime kwargs win)
                 final_args = {**loaded_data, **kwargs}
                 # Filter out any args that aren't in the original __init__
@@ -212,10 +217,10 @@ def spool(
 
 
 def spool_asset(
-    _func: Callable = None,
+    _func: Callable | None = None,
     *,
-    file: str = None,
-    custom_engine: Callable = None,
+    file: str | None = None,
+    custom_engine: Callable | None = None,
 ):
     """
     A wrapper for 'spool' that reads from a pre-configured asset path.
@@ -223,6 +228,7 @@ def spool_asset(
     """
     # TODO: Create setup.py to set up folder structure
     asset_path = (
-        Path(_get_option("asset_path")) or Path(__file__).parent.parent.parent / "assets/static"
+        Path(_get_option("asset_path"))
+        or Path(__file__).parent.parent.parent / "assets/static"
     )
     return spool(_func, file=file, path=asset_path, custom_engine=custom_engine)

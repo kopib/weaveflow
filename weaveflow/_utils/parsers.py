@@ -1,7 +1,8 @@
-from collections.abc import Callable
-from pathlib import Path
 import json
 import tomllib
+from collections.abc import Callable
+from pathlib import Path
+
 import yaml
 
 
@@ -10,32 +11,32 @@ def _read_toml(path: str | Path) -> dict:
     try:
         with open(path, "rb") as f:
             return tomllib.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"File not found: {path}")
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"File not found: {path}") from e
     except tomllib.TOMLDecodeError as e:
-        raise ValueError(f"Error decoding TOML file: {e}")
+        raise ValueError(f"Error decoding TOML file: {e}") from e
 
 
 def _read_yaml(path: str | Path) -> dict:
     """Convert a YAML file to a dictionary."""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return yaml.safe_load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"File not found: {path}")
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"File not found: {path}") from e
     except yaml.YAMLError as e:
-        raise ValueError(f"Error decoding YAML file: {e}")
+        raise ValueError(f"Error decoding YAML file: {e}") from e
 
 
 def _read_json(path: str | Path) -> dict:
     """Convert a JSON file to a dictionary."""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"File not found: {path}")
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"File not found: {path}") from e
     except json.JSONDecodeError as e:
-        raise ValueError(f"Error decoding JSON file: {e}")
+        raise ValueError(f"Error decoding JSON file: {e}") from e
 
 
 class _ConfigReader:
@@ -63,7 +64,9 @@ class _ConfigReader:
 
         return default_engine
 
-    def __init__(self, path: Path | str, custom_engine: dict[str, callable] = None) -> None:
+    def __init__(
+        self, path: Path | str, custom_engine: dict[str, callable] | None = None
+    ) -> None:
         self.path = path
         self.extension = Path(path).suffix.lower()
         _engines = {

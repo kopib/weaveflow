@@ -6,10 +6,9 @@ default paths or feature flags, allowing for centralized configuration
 management.
 """
 
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
-from collections.abc import Iterable
-
 
 # A private dictionary to hold all package settings.
 _settings = {
@@ -40,7 +39,7 @@ def set_weaveflow_option(options: Iterable[str], values: Iterable[Any]) -> None:
     if not isinstance(values, Iterable):
         raise TypeError("Value must be a string or an iterable of strings.")
 
-    for option, value in zip(options, values):
+    for option, value in zip(options, values, strict=False):
         if option not in _settings:
             # TODO: Integrate with logger, warning instead of KeyError
             raise KeyError(

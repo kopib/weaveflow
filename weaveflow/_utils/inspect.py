@@ -1,8 +1,10 @@
-from collections.abc import Callable
 import inspect
+from collections.abc import Callable
 
 
-def _get_function_args(f: Callable, nrargs: int = None) -> tuple[list[str], list[str]]:
+def _get_function_args(
+    f: Callable, nrargs: int | None = None
+) -> tuple[list[str], list[str]]:
     """
     Identifies the required and optional arguments of a function.
     Returns two lists: (required_args, optional_args).
@@ -38,7 +40,8 @@ def _get_function_args(f: Callable, nrargs: int = None) -> tuple[list[str], list
 
         if len(required) < nrargs:
             raise ValueError(
-                f"Function {f.__name__} requires at least {nrargs} inputs, but only {len(required)} were found."
+                f"Function {f.__name__} requires at least {nrargs} inputs, "
+                f"but only {len(required)} were found."
             )
         required = required[:nrargs]
         optional = optional[nrargs:]

@@ -3,7 +3,7 @@ import inspect
 import pandas as pd
 import pytest
 
-from weaveflow import weave, rethread, Loom, WeaveGraph
+from weaveflow import Loom, WeaveGraph, rethread, weave
 
 
 def test_rethread_preserves_identity_and_is_weave():
@@ -30,11 +30,11 @@ def test_rethread_preserves_identity_and_is_weave():
     assert hasattr(g, "_weave_meta")
 
     # Original metadata untouched
-    meta_f = getattr(f, "_weave_meta")
+    meta_f = f._weave_meta
     assert meta_f._meta_mapping is None
 
     # New metadata uses remapping
-    meta_g = getattr(g, "_weave_meta")
+    meta_g = g._weave_meta
     assert meta_g._meta_mapping == {"x": "x_new", "y": "y_new"}
 
 

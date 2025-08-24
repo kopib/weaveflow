@@ -5,11 +5,13 @@ tasks that perform sequential, in-place transformations on a DataFrame.
 
 import functools
 import inspect
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from .meta import RefineMeta
 from weaveflow._errors import ParamsFromIsNotASpoolError
 from weaveflow._utils import _dump_object_to_dict
+
+from .meta import RefineMeta
 
 
 def _is_refine(f: Callable) -> bool:
@@ -18,10 +20,10 @@ def _is_refine(f: Callable) -> bool:
 
 
 def refine(
-    _func: Callable = None,
+    _func: Callable | None = None,
     *,
-    description: str = None,
-    on_method: str = None,
+    description: str | None = None,
+    on_method: str | None = None,
     params_from: Any = None,
 ) -> Callable:
     """Decorator to mark a function or class as a 'refine' task for DataFrame transformations.
@@ -62,7 +64,9 @@ def refine(
         import weaveflow as wf
 
 
-        @wf.refine(on_method="process", description="Orchestrates the preprocessing steps.")
+        @wf.refine(
+            on_method="process", description="Orchestrates the preprocessing steps."
+        )
         class DataPreprocessor:
             def __init__(self, df: pd.DataFrame):
                 self.df = df
@@ -109,20 +113,21 @@ def refine(
                 instance = func_or_class(*args, **kwargs, **params)
                 if not hasattr(instance, method_to_run_name):
                     raise AttributeError(
-                        f"Instance of {func_or_class.__name__} has no method {method_to_run_name!r}"
+                        f"Instance of {func_or_class.__name__} has no method "
+                        f"{method_to_run_name!r}"
                     )
                 method_to_run = getattr(instance, method_to_run_name)
 
                 return method_to_run()
 
-            setattr(class_wrapper, "_refine_meta", refine_meta)
+            class_wrapper._refine_meta = refine_meta
             return class_wrapper
         # Handle function decoration
         else:
             if _on_method_arg is not None:
                 raise ValueError("Argument 'on_method' only valid for classes.")
 
-            setattr(func_or_class, "_refine_meta", refine_meta)
+            func_or_class._refine_meta = refine_meta
 
             @functools.wraps(func_or_class)
             def func_wrapper(*args, **kwargs):

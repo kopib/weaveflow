@@ -55,8 +55,12 @@ def generate_data(seed: int = 42, num_companies: int = 50) -> pd.DataFrame:
         "ps_ratio": np.round(np.random.uniform(1, 10, num_companies), 1),
         "dividend_yield": np.round(np.random.uniform(0, 0.05, num_companies), 3),
         "payout_ratio": np.round(np.random.uniform(0.1, 0.7, num_companies), 2),
-        "free_cash_flow_millions": np.round(np.random.uniform(100, 5000, num_companies), 1),
-        "revenue_growth_rate": np.round(np.random.uniform(-0.02, 0.25, num_companies), 3),
+        "free_cash_flow_millions": np.round(
+            np.random.uniform(100, 5000, num_companies), 1
+        ),
+        "revenue_growth_rate": np.round(
+            np.random.uniform(-0.02, 0.25, num_companies), 3
+        ),
         "debt_to_equity": np.round(np.random.uniform(0.1, 2.5, num_companies), 2),
     }
     companies_df = pd.DataFrame(data)
@@ -141,7 +145,9 @@ def get_analyst_ratings(
     return rslt["analyst_rating"], rslt["price_target"]
 
 
-@wf.weave(outputs=["average_pe_ratio", "average_dividend_yield"], params_from=IndustryMetrics)
+@wf.weave(
+    outputs=["average_pe_ratio", "average_dividend_yield"], params_from=IndustryMetrics
+)
 @delayed(seconds=1.1)
 def get_industry_metrics(
     industry: str,
@@ -161,7 +167,9 @@ class DataPreprocessor:
 
     def _remove_missing_values(self):
         """Drops rows with any NaN values."""
-        self.df.dropna(subset=["pe_ratio"], inplace=True)  # Only drop if pe_ratio is missing
+        self.df.dropna(
+            subset=["pe_ratio"], inplace=True
+        )  # Only drop if pe_ratio is missing
 
     def _cap_pe_by_industry(self):
         """Filters out companies with P/E ratios above their industry's cap."""
@@ -250,7 +258,10 @@ class UndervaluedData:
 
     def _get_undervalued(self) -> pd.DataFrame:
         """Get undervalued companies with margin of safety."""
-        m = self.df["fair_value_dfc"] * (1 - self.margin_of_safety) < self.df["current_price"]
+        m = (
+            self.df["fair_value_dfc"] * (1 - self.margin_of_safety)
+            < self.df["current_price"]
+        )
         return self.df[m]
 
     @delayed(seconds=0.5)

@@ -17,10 +17,12 @@ class ParamsFromIsNotASpoolError(TypeError):
 
             # Build a detailed, multi-line error message
             message = (
-                f"Argument 'params_from' in the decorator for '{obj_name}' received an invalid object."
+                f"Argument 'params_from' in the decorator for '{obj_name}' "
+                f"received an invalid object."
                 f"\n  - Expected: A function or class decorated with @spool."
                 f"\n  - Received: An object of type '{obj_type}' named '{obj_name}'."
-                f"\n\nSuggestion: Make sure you have decorated '{obj_name}' with the @spool decorator."
+                f"\n\nSuggestion: Make sure you have decorated '{obj_name}' with "
+                f"the @spool decorator."
             )
 
             # Call the parent class __init__ with the formatted message

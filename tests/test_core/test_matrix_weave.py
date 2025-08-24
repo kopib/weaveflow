@@ -1,7 +1,7 @@
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-from weaveflow import Loom, refine, WeaveGraph, weave
+from weaveflow import Loom, WeaveGraph, refine, weave
 from weaveflow.core._matrix import WeaveMatrix
 
 
@@ -50,7 +50,9 @@ def test_weave_matrix_single_outputs_only():
     }
     df = WeaveMatrix(task_collection).build()
 
-    expected = pd.DataFrame({"t1": ["Output", "Output"]}, index=["y1", "y2"])  # rows sorted
+    expected = pd.DataFrame(
+        {"t1": ["Output", "Output"]}, index=["y1", "y2"]
+    )  # rows sorted
     assert_frame_equal(df, expected)
 
 

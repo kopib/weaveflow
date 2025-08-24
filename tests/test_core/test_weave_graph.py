@@ -1,13 +1,13 @@
+import graphviz
 import pandas as pd
 import pytest
-from weaveflow import Loom, refine, WeaveGraph, weave
+
+from weaveflow import Loom, WeaveGraph, refine, weave
 
 
 @pytest.mark.weavegraph
 @pytest.mark.smoke
 def test_weave_graph_build_smoke_no_legend():
-    import graphviz
-
     @weave(outputs="sum")
     def add(a: pd.Series, b: pd.Series):
         return a + b
@@ -37,8 +37,6 @@ def test_weave_graph_build_smoke_no_legend():
 @pytest.mark.weavegraph
 @pytest.mark.legend
 def test_weave_graph_legend_on_vs_off():
-    import graphviz
-
     @weave(outputs="out")
     def w(a: pd.Series):
         return a
@@ -61,8 +59,6 @@ def test_weave_graph_legend_on_vs_off():
 @pytest.mark.weavegraph
 @pytest.mark.edges
 def test_weave_graph_edges_and_colors():
-    import graphviz
-
     @weave(outputs="y")
     def sum_ab(a: pd.Series, b: pd.Series, opt: int = 0):
         return a + b + opt
@@ -90,8 +86,6 @@ def test_weave_graph_edges_and_colors():
 @pytest.mark.weavegraph
 @pytest.mark.empty
 def test_weave_graph_empty_tasks_smoke():
-    import graphviz
-
     df = pd.DataFrame({"a": [1, 2]})
     loom = Loom(df, [])
     loom.run()

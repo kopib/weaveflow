@@ -9,12 +9,13 @@ function's inputs, outputs, and parameters.
 task without altering its core logic, enhancing its reusability.
 """
 
-from dataclasses import replace
 import functools
+from dataclasses import replace
+
+from weaveflow._errors import ParamsFromIsNotASpoolError
+from weaveflow._utils import _dump_object_to_dict, _get_function_args
 
 from .meta import WeaveMeta
-from weaveflow._errors import ParamsFromIsNotASpoolError
-from weaveflow._utils import _get_function_args, _dump_object_to_dict
 
 
 def _is_weave(f: callable) -> bool:
@@ -22,7 +23,9 @@ def _is_weave(f: callable) -> bool:
     return callable(f) and hasattr(f, "_weave_meta")
 
 
-def weave(outputs: str | list[str], nrargs: int = None, params_from: object = None) -> callable:
+def weave(
+    outputs: str | list[str], nrargs: int | None = None, params_from: object = None
+) -> callable:
     # TODO: Infer number of inputs if not provided
 
     if params_from and nrargs is not None:
@@ -58,7 +61,7 @@ def weave(outputs: str | list[str], nrargs: int = None, params_from: object = No
             _outputs=outputs,
             _params=params,
         )
-        setattr(f, "_weave_meta", weave_meta)
+        f._weave_meta = weave_meta
 
         # Wrap decoarated function
         @functools.wraps(f)
@@ -70,7 +73,7 @@ def weave(outputs: str | list[str], nrargs: int = None, params_from: object = No
     return decorator
 
 
-def rethread(f: callable, meta: dict[str, str] = None) -> callable:
+def rethread(f: callable, meta: dict[str, str] | None = None) -> callable:
     """
     Return a new callable with remapped weave metadata, leaving the original untouched.
 
@@ -86,7 +89,7 @@ def rethread(f: callable, meta: dict[str, str] = None) -> callable:
         return f
 
     # Get weave meta data from function
-    weave_meta = getattr(f, "_weave_meta")
+    weave_meta = f._weave_meta
     # Bind meta data with new meta mapping (defensive copy)
     new_meta = replace(weave_meta, _meta_mapping=dict(meta))
 
@@ -95,6 +98,6 @@ def rethread(f: callable, meta: dict[str, str] = None) -> callable:
     def wrapped(*args, **kwargs):
         return f(*args, **kwargs)
 
-    setattr(wrapped, "_weave_meta", new_meta)
+    wrapped._weave_meta = new_meta
 
     return wrapped

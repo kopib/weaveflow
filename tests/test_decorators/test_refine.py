@@ -1,11 +1,12 @@
-from pathlib import Path
 from dataclasses import dataclass
-from pandas import DataFrame, Series, Index, read_csv
-from pandas.testing import assert_series_equal, assert_frame_equal
-import pytest
-from weaveflow import refine, weave, spool_asset, Loom
-from weaveflow.options import set_weaveflow_option
+from pathlib import Path
 
+import pytest
+from pandas import DataFrame, Index, Series, read_csv
+from pandas.testing import assert_frame_equal, assert_series_equal
+
+from weaveflow import Loom, refine, spool_asset, weave
+from weaveflow.options import set_weaveflow_option
 
 # Set asset path and include spool data from specified folder
 # Set include_spool to consider files containing basename "costs" in their name
@@ -91,7 +92,7 @@ class DataGrouper:
 
 def test_weave_spool_basics():
     # Check meta data of weave with spooled params
-    meta = getattr(get_total_costs, "_weave_meta")
+    meta = get_total_costs._weave_meta
     assert meta._rargs == ["city", "children", "has_subscription"]
     assert meta._oargs == []
     assert meta._outputs == ["total_costs"]
@@ -122,14 +123,18 @@ def test_consistency_in_refiner(personal_data, refiner_task):
 
 def test_loomflow_with_refiner(personal_data):
     # Define loom with clean_data refiner
-    loom = Loom(personal_data, [get_total_costs, get_surplus, clean_data, get_total_city_costs])
+    loom = Loom(
+        personal_data, [get_total_costs, get_surplus, clean_data, get_total_city_costs]
+    )
     loom.run()
 
     # assert that 2 rows (number 7 and 9) are dropped by clean_data refiner due to nan values
     assert len(loom.database) == len(personal_data) - 2
     assert loom.database.index.tolist() == [0, 1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14]
     # Assert new columns are added by weave functions
-    assert all(c in loom.database.columns for c in ["total_costs", "surplus", "city_costs"])
+    assert all(
+        c in loom.database.columns for c in ["total_costs", "surplus", "city_costs"]
+    )
 
     # Define expected total cost column based on data inputs and spooled params
     total_cost_expected = Series(
@@ -178,7 +183,8 @@ def test_loomflow_with_several_refiners(personal_data):
     # Assert that groupby statement worked by checking number of rows
     assert len(loom.database) == personal_data["city"].nunique()
     # Assert that data base is series now after application of groupby statement
-    assert isinstance(loom.database, Series) and loom.database.name == "surplus"
+    assert isinstance(loom.database, Series)
+    assert loom.database.name == "surplus"
     # Assert result of groupby statement is as expected
     assert_series_equal(
         loom.database,

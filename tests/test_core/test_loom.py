@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
-from weaveflow import Loom, weave, rethread
+
+from weaveflow import Loom, rethread, weave
 from weaveflow._decorators import WeaveMeta, _is_weave
 
 
@@ -35,19 +36,19 @@ def test_weave_decorator_attributes():
     assert _is_weave(add_columns)
     assert _is_weave(scale_sum)
 
-    add_columns_weave_meta = getattr(add_columns, "_weave_meta")
-    scale_sum_weave_meta = getattr(scale_sum, "_weave_meta")
+    add_columns_weave_meta = add_columns._weave_meta
+    scale_sum_weave_meta = scale_sum._weave_meta
 
     assert isinstance(add_columns_weave_meta, WeaveMeta)
     assert isinstance(scale_sum_weave_meta, WeaveMeta)
 
-    add_columns_weave_meta._rargs == ["col1", "col2"]
-    add_columns_weave_meta._oargs == []
-    add_columns_weave_meta._outputs == ["sum"]
+    assert add_columns_weave_meta._rargs == ["col1", "col2"]
+    assert add_columns_weave_meta._oargs == []
+    assert add_columns_weave_meta._outputs == ["sum"]
 
-    scale_sum_weave_meta._rargs == ["mul"]
-    scale_sum_weave_meta._oargs == ["scaler"]
-    scale_sum_weave_meta._outputs == ["scaled_mul"]
+    assert scale_sum_weave_meta._rargs == ["mul"]
+    assert scale_sum_weave_meta._oargs == ["scaler"]
+    assert scale_sum_weave_meta._outputs == ["scaled_mul"]
 
 
 def test_error_on_non_weave(base_dataframe_input):
@@ -68,11 +69,15 @@ def test_error_on_non_weave(base_dataframe_input):
 
     # Raise ValueError if ninputs is not an integer or is negative
     with pytest.raises(ValueError):
-        weave(outputs="col1_plus_1", nrargs=2.0)(invalid_inputs_weave)  # ninputs is not an integer
-        weave(outputs="col1_plus_1", nrargs=-1)(invalid_inputs_weave)  # ninputs is negative
-        weave(outputs="constant", nrargs=1)(
-            invalid_optional_arg_weave
-        )  # ninputs is specified but function has optional arguments
+        weave(outputs="col1_plus_1", nrargs=2.0)(invalid_inputs_weave)
+    with pytest.raises(ValueError):
+        # ninputs is not an integer
+        weave(outputs="col1_plus_1", nrargs=-1)(invalid_inputs_weave)
+    with pytest.raises(ValueError):
+        # ninputs is negative
+        weave(outputs="constant", nrargs=1)(invalid_optional_arg_weave)
+    with pytest.raises(ValueError):
+        # ninputs is specified but function has optional arguments
         weave(outputs="constant", nrargs=2)(
             invalid_optional_arg_weave_ninputs
         )  # ninputs greater than number of required arguments
@@ -84,7 +89,7 @@ def test_weave_runs(base_dataframe, base_dataframe_input, weave_func):
     # 'weave_func' is now the actual function object
     loom = Loom(database=base_dataframe_input, tasks=[weave_func])
     loom.run()
-    meta = getattr(weave_func, "_weave_meta")
+    meta = weave_func._weave_meta
     expected_df = base_dataframe[meta._rargs + meta._outputs]
     pd.testing.assert_frame_equal(loom.database, expected_df)
 
@@ -152,7 +157,9 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
             scale_sum,
             margin_scaled,
         ],
-        optionals={margin_scaled: {"scaler": 2, "margin": 1}},  # Make task-specific optionals
+        optionals={
+            margin_scaled: {"scaler": 2, "margin": 1}
+        },  # Make task-specific optionals
         margin=margin,
         scaler=scaler,
     )
@@ -170,7 +177,8 @@ def test_rethread(base_dataframe_input: pd.DataFrame):
     loom.run()
 
     assert (
-        list(loom.database.columns) == list(meta.keys()) + calculate_stats_t._weave_meta._outputs
+        list(loom.database.columns)
+        == list(meta.keys()) + calculate_stats_t._weave_meta._outputs
     )
 
     expected_df = base_dataframe_input.copy()
@@ -216,7 +224,9 @@ def test_unknown_optional_argument(base_dataframe_input: pd.DataFrame):
         check_names=False,
     )
 
-    loom = Loom(database=base_dataframe_input, tasks=[add_columns], optionals={"unknown": 2})
+    loom = Loom(
+        database=base_dataframe_input, tasks=[add_columns], optionals={"unknown": 2}
+    )
     loom.run()
     pd.testing.assert_series_equal(
         loom.database["modified_unknown"],

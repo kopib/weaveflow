@@ -6,15 +6,15 @@ The 'Loom' class is the main entry point for executing a pipeline of
 execution, data flow, and metadata collection.
 """
 
+import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Callable
+from collections.abc import Callable, Iterable
 from typing import override
-import time
+
 import pandas as pd
 
-from weaveflow._decorators import _is_weave
-from weaveflow._decorators import _is_refine
+from weaveflow._decorators import _is_refine, _is_weave
 from weaveflow._utils import _dump_str_to_list
 
 
@@ -50,7 +50,7 @@ class PandasWeave(_BaseWeave):
         database: pd.DataFrame,
         weave_tasks: Iterable[callable],
         weaveflow_name: str = "default",
-        optionals: dict[str, dict[str]] = None,
+        optionals: dict[str, dict[str]] | None = None,
         **kwargs,
     ):
         super().__init__(weave_tasks, weaveflow_name)
@@ -85,7 +85,7 @@ class PandasWeave(_BaseWeave):
         # Update args with the required arguments of the first weave task
         for weave_task in weave_tasks:
             if _is_weave(weave_task):
-                _args = getattr(weave_task, "_weave_meta")._rargs
+                _args = weave_task._weave_meta._rargs
                 args.update(set(_args))
 
         # If no weave tasks found, raise an error
@@ -97,12 +97,14 @@ class PandasWeave(_BaseWeave):
     @staticmethod
     def dump_to_frame(outputs: list[str], calculation_output: any, **kwargs):
         """
-        Dump the calculation output to a pandas DataFrame that can be concatenated to the database.
+        Dump the calculation output to a pandas DataFrame that can be concatenated
+        to the database.
 
         Args:
             outputs (list[str]): The names of the outputs.
             calculation_output (any): The output of the calculation.
-            **kwargs: Additional keyword arguments to pass to the pandas DataFrame constructor.
+            **kwargs: Additional keyword arguments to pass to the pandas DataFrame
+                constructor.
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the calculation output.
@@ -110,12 +112,14 @@ class PandasWeave(_BaseWeave):
         calculation_output_dict = (
             {outputs[0]: calculation_output}
             if len(outputs) == 1
-            else dict(zip(outputs, calculation_output))
+            else dict(zip(outputs, calculation_output, strict=False))
         )
         return pd.DataFrame(calculation_output_dict, **kwargs)
 
     @staticmethod
-    def check_intersection_columns_dataframe(df: pd.DataFrame, expected_cols: list[str]) -> None:
+    def check_intersection_columns_dataframe(
+        df: pd.DataFrame, expected_cols: list[str]
+    ) -> None:
         """
         Check if the columns in the database intersect with the outputs.
 
@@ -124,7 +128,8 @@ class PandasWeave(_BaseWeave):
             outputs (list[str]): The list of output column names.
 
         Raises:
-            ValueError: If there is an intersection between the database columns and outputs.
+            ValueError: If there is an intersection between the database
+                columns and outputs.
         """
         missing_cols = set(expected_cols) - set(df.columns)
 
@@ -147,7 +152,9 @@ class PandasWeave(_BaseWeave):
             for oarg in optional_args
             if oarg in self.global_optionals
         }
-        task_optionals = self.optionals.get(weave_name, {}) or self.optionals.get(weave_task, {})
+        task_optionals = self.optionals.get(weave_name, {}) or self.optionals.get(
+            weave_task, {}
+        )
         oargs.update(task_optionals)
         return oargs
 
@@ -177,8 +184,13 @@ class PandasWeave(_BaseWeave):
     def _build_required_kwargs(
         df: pd.DataFrame, required_args: list[str], rargs_m: list[str]
     ) -> dict:
-        """Build kwargs for calling the weave using original param names and mapped columns."""
-        return {orig: df[mapped] for orig, mapped in zip(required_args, rargs_m)}
+        """
+        Build kwargs for calling the weave using original param
+        namesnames and mapped columns.
+        """
+        return {
+            orig: df[mapped] for orig, mapped in zip(required_args, rargs_m, strict=False)
+        }
 
     def _record_weave_run(
         self,
@@ -210,8 +222,8 @@ class PandasWeave(_BaseWeave):
 
     def _run_weave_task(self, weave_task: callable) -> None:
         """Run a single weave task end-to-end on the current database."""
-        weave_name = getattr(weave_task, "__name__")
-        weave_meta = getattr(weave_task, "_weave_meta")
+        weave_name = weave_task.__name__
+        weave_meta = weave_task._weave_meta
 
         # Extract meta pieces
         params = weave_meta._params
@@ -296,11 +308,11 @@ class Loom(PandasWeave):
         database: pd.DataFrame,
         tasks: Iterable[callable],
         weaveflow_name: str = "default",
-        optionals: dict[str, dict[str]] = None,
+        optionals: dict[str, dict[str]] | None = None,
         infer_weave_columns: str | bool = False,
-        refine_columns: str | list[str] = None,
-        weave_columns: str | list[str] = None,
-        columns: str | list[str] = None,
+        refine_columns: str | list[str] | None = None,
+        weave_columns: str | list[str] | None = None,
+        columns: str | list[str] | None = None,
         **kwargs,
     ):
         """Initializes the Loom orchestrator.
@@ -326,8 +338,10 @@ class Loom(PandasWeave):
             weave_columns=weave_columns,
             columns=columns,
         )
-        # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.
-        super().__init__(database, filtered_weave_tasks, weaveflow_name, optionals, **kwargs)
+        # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.  # noqa: E501
+        super().__init__(
+            database, filtered_weave_tasks, weaveflow_name, optionals, **kwargs
+        )
         self.tasks = all_tasks  # All tasks
         self.refine_collector = defaultdict(dict)
         self.__pre_init__()
@@ -336,9 +350,9 @@ class Loom(PandasWeave):
         self,
         database: pd.DataFrame,
         infer_weave_columns: str | bool = False,
-        refine_columns: str | list[str] = None,
-        weave_columns: str | list[str] = None,
-        columns: str | list[str] = None,
+        refine_columns: str | list[str] | None = None,
+        weave_columns: str | list[str] | None = None,
+        columns: str | list[str] | None = None,
     ) -> pd.DataFrame:
         """
         Pre-select columns for the database based on user input.
@@ -348,7 +362,7 @@ class Loom(PandasWeave):
             columns = _dump_str_to_list(columns)
             self.check_intersection_columns_dataframe(database, columns)
             return database[columns]
-        
+
         # If refine columns are specified, use them as a starting point
         if refine_columns is not None:
             refine_columns = _dump_str_to_list(refine_columns)
@@ -360,16 +374,20 @@ class Loom(PandasWeave):
                 columns = refine_columns + weave_columns
                 self.check_intersection_columns_dataframe(database, columns)
                 return database[columns]
-            
+
             # If infer weave columns is True, infer the columns from the weave tasks
             # and add them to the refine columns
             if infer_weave_columns:
-                inferred_weave_columns: set = self._infer_columns_from_weaves(self.weave_tasks)
-                inferred_weave_columns = [col for col in inferred_weave_columns if col in database]
+                inferred_weave_columns: set = self._infer_columns_from_weaves(
+                    self.weave_tasks
+                )
+                inferred_weave_columns = [
+                    col for col in inferred_weave_columns if col in database
+                ]
                 columns = refine_columns + inferred_weave_columns
                 self.check_intersection_columns_dataframe(database, refine_columns)
                 return database[columns]
-        
+
         # If no columns are specified, return the database as is
         return database
 
@@ -381,7 +399,8 @@ class Loom(PandasWeave):
         for task in self.tasks:
             if not (_is_weave(task) or _is_refine(task)):
                 raise TypeError(
-                    f"Argument 'weave_tasks' contains a non-weave and non-refine task: {task!r}"
+                    f"Argument 'weave_tasks' contains a non-weave"
+                    f"and non-refine task: {task!r}"
                 )
 
     def _record_refine_run(
@@ -410,7 +429,7 @@ class Loom(PandasWeave):
             take a pandas DataFrame as input and return a pandas DataFrame.
         """
         # Get the meta information from refine object
-        refine_meta = getattr(refine_task, "_refine_meta")
+        refine_meta = refine_task._refine_meta
         refine_name = refine_meta._refine_name
         # Run calculation and build the graph
         t0 = time.perf_counter()

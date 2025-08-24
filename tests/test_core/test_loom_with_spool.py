@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
-from numpy import inf
+
 import pandas as pd
-from weaveflow.core import Loom
+from numpy import inf
+
 from weaveflow._decorators import spool, weave
+from weaveflow.core import Loom
 
 
 @spool(path=Path(__file__).parent.parent / "data")
@@ -63,11 +65,13 @@ def test_spool_weave(finacial_dataframe):
     margin_of_safety = 0.2
     loom = Loom(finacial_dataframe, [how_rich_are_you], margin_of_safety=0.2)
     loom.run()
-    loom.database.shape == (len(finacial_dataframe), 5)
+    assert loom.database.shape == (len(finacial_dataframe), 6)
 
     df = finacial_dataframe.copy()
 
-    net_worth = (df["stocks"] - df["investments"]) * (1 - 0.42) + df["investments"] + df["rest"]
+    net_worth = (
+        (df["stocks"] - df["investments"]) * (1 - 0.42) + df["investments"] + df["rest"]
+    )
     net_worth *= 1 - margin_of_safety
 
     df["net_worth"] = net_worth

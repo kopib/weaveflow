@@ -1,6 +1,7 @@
 import pytest
-from weaveflow._decorators import WeaveMeta, RefineMeta
-from weaveflow import weave, rethread
+
+from weaveflow import rethread, weave
+from weaveflow._decorators import RefineMeta, WeaveMeta
 
 
 def test_weave_meta_immutable():
@@ -155,7 +156,7 @@ def test_rethread_defensive_copy_of_mapping():
     m["x"] = "CHANGED"
 
     # Access the new meta and confirm mapping did not change internally
-    new_meta = getattr(g, "_weave_meta")
+    new_meta = g._weave_meta
     assert new_meta._meta_mapping == {"x": "x_new", "y": "y_new"}
     # And ensure type remains dict for compatibility
     assert isinstance(new_meta._meta_mapping, dict)

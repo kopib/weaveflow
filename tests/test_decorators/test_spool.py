@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from pathlib import Path
+
 from pandas import DataFrame, read_csv
 from pandas.testing import assert_frame_equal
-from weaveflow._decorators import spool_asset
-from weaveflow._decorators import SPoolRegistry
-from weaveflow.options import set_weaveflow_option
 
+from weaveflow._decorators import SPoolRegistry, spool_asset
+from weaveflow.options import set_weaveflow_option
 
 set_weaveflow_option("asset_path", Path(__file__).parent.parent / "data")
 

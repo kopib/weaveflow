@@ -1,12 +1,14 @@
 from pathlib import Path
+
+import pytest
 from pandas import DataFrame, read_csv
 from pandas.testing import assert_frame_equal
-import pytest
+
+from tests.data.dummy.dummy import dummy_function
 from weaveflow._utils import (
     _handle_files_from_iterable,
     _load_config_data,
 )
-from tests.data.dummy.dummy import dummy_function
 
 
 def test_handle_elements_from_iterable():
@@ -30,7 +32,9 @@ def test_handle_elements_from_iterable_with_path():
         Path("/home/user/file_spool.yml"),
         Path("/home/user/spool/somefile.txt"),
     ]
-    assert _handle_files_from_iterable(files, "spool") == [Path("/home/user/file_spool.yml")]
+    assert _handle_files_from_iterable(files, "spool") == [
+        Path("/home/user/file_spool.yml")
+    ]
     assert _handle_files_from_iterable(files, "registry") == [
         Path("/home/user/file_registry.json"),
         Path("/home/user/file_registry.toml"),
@@ -78,7 +82,9 @@ def test_load_config_data_specific_file_with_include_exclude_error():
 
 def test_load_config_data_empty_configs(test_data_path):
     """Test error when only empty config files found in directory."""
-    with pytest.raises(ValueError, match="Config files found, but no data found in config files."):
+    with pytest.raises(
+        ValueError, match="Config files found, but no data found in config files."
+    ):
         _load_config_data(
             path=test_data_path, exclude=["dummy_spool"]
         )  # dummy_spool.yaml is not empty, exclude to raise error
@@ -134,9 +140,11 @@ def test_load_csv_custom_engine(test_data_path):
     )
 
     assert_frame_equal(data["costs"], data2["costs"])
-    assert isinstance(data, dict) and isinstance(data2, dict)
+    assert isinstance(data, dict)
+    assert isinstance(data2, dict)
     # Content from csv and toml, while csv is wrapped in dict
-    assert (len(data) == 4) and (len(data2) == 1)
+    assert len(data) == 4
+    assert len(data2) == 1
     assert isinstance(data["costs"], DataFrame)
     expected_data = read_csv(data_path / "costs.csv")
     assert_frame_equal(data["costs"], expected_data)

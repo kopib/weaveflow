@@ -6,7 +6,15 @@ This module defines custom exceptions related to the WeaveMatrix functionality.
 class InvalidTaskCollectionError(ValueError):
     """Raised when WeaveMatrix receives an invalid or malformed task collection.
 
-    Expected a mapping of the form: {task_name: {"rargs": list[str], "oargs": list[str], "outputs": list[str], "params": list[str]}}
+    Expected a mapping of the form:
+    {
+        task_name: {
+            "rargs": list[str],
+            "oargs": list[str],
+            "outputs": list[str],
+            "params": list[str]
+            }
+    }
     - Missing keys are tolerated (treated as empty), but wrong types are not.
     - All present lists must contain strings only.
     """

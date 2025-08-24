@@ -1,10 +1,10 @@
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 
 def _handle_files_from_iterable(
     iterable: Iterable[str | Path],
-    contain_matching: Iterable[str] | str = None,
+    contain_matching: Iterable[str] | str | None = None,
     include: bool = True,
 ) -> list:  # Returning a list is more specific and often better
     """Includes or excludes elements from an iterable based on string matching."""
@@ -25,4 +25,3 @@ def _handle_files_from_iterable(
         # - If include=False, it keeps items where no match is found.
         if include is any(pattern in Path(item).name for pattern in contain_matching)
     ]
-

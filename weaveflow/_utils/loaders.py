@@ -1,34 +1,36 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from inspect import getfile
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
+
 from pandas import DataFrame
+
+from .filesystem import _handle_files_from_iterable
 
 # Import from sibling modules using relative imports to avoid
 # circular import
 from .parsers import _ConfigReader
-from .filesystem import _handle_files_from_iterable
 
 
-def _load_default_extensions(custom_engine: dict[str, Any] = None) -> list[str]:
+def _load_default_extensions(custom_engine: dict[str, Any] | None = None) -> list[str]:
     """Load default extensions and add custom ones if provided."""
     default_extensions = ["*.json", "*.yaml", "*.yml", "*.toml"]
     if custom_engine and isinstance(custom_engine, dict):
         for ext in custom_engine:
-            ext = ext.lstrip("*").lstrip(".")
-            default_extensions.append(f"*.{ext}")
+            ext_strip = ext.lstrip("*").lstrip(".")
+            default_extensions.append(f"*.{ext_strip}")
 
     return default_extensions
 
 
 def _load_config_data(
     *,
-    obj: Callable = None,
-    path: str = None,
-    exclude: Iterable[str] = None,
-    include: Iterable[str] = None,
-    specific_file: str = None,
-    custom_engine: dict[str, Any] = None,
+    obj: Callable | None = None,
+    path: str | None = None,
+    exclude: Iterable[str] | None = None,
+    include: Iterable[str] | None = None,
+    specific_file: str | None = None,
+    custom_engine: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Helper to find, read, and merge config files for a given object."""
 
@@ -42,7 +44,9 @@ def _load_config_data(
 
     # Assert custom engine is callable
     if not ((custom_engine is None) or isinstance(custom_engine, dict)):
-        raise TypeError("Custom engine must be a dict mapping file extensions to read function.")
+        raise TypeError(
+            "Custom engine must be a dict mapping file extensions to read function."
+        )
 
     # If path specified, use that
     if isinstance(path, (str, Path)):
@@ -64,8 +68,10 @@ def _load_config_data(
         config_path = parent_dir / specific_file
         if not config_path.exists():
             raise FileNotFoundError(f"Specified config file not found: {config_path}")
-        # Read specific file, can be dict (if config file) or any other type (if custom engine)
-        data: dict | DataFrame = _ConfigReader(str(config_path), custom_engine=custom_engine).read()
+        # Read specific file, can be dict or any other type (if custom engine)
+        data: dict | DataFrame = _ConfigReader(
+            str(config_path), custom_engine=custom_engine
+        ).read()
         # If data is a DataFrame, wrap it in a dict to standardize output
         if isinstance(data, DataFrame):
             data = {config_path.stem: data}

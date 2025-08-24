@@ -1,7 +1,7 @@
 import pytest
 
-from weaveflow.core._matrix import WeaveMatrix
 from weaveflow._errors import InvalidTaskCollectionError
+from weaveflow.core._matrix import WeaveMatrix
 
 
 def test_weave_matrix_raises_on_non_mapping_task_collection():

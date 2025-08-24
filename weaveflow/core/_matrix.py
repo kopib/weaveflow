@@ -4,8 +4,9 @@ matrix-like view of the dependencies between weave tasks and their
 arguments (inputs and outputs).
 """
 
-import pandas as pd
 from collections.abc import Mapping
+
+import pandas as pd
 
 from weaveflow._errors import InvalidTaskCollectionError
 
@@ -30,7 +31,7 @@ class WeaveMatrix:
     - The task collection is expected to be a mapping: task_name -> {
         "outputs": list[str], "rargs": list[str], "oargs": list[str], "params": list[str]
       }
-    """
+    """  # noqa: E501
 
     def __init__(self, task_collection: dict[str, dict]):
         # Validate mapping type early to give a clear error
@@ -52,7 +53,7 @@ class WeaveMatrix:
         rows = sorted(row_names)
         cols = sorted(self._tasks.keys())
 
-        # If nothing to show, return a truly empty DataFrame (RangeIndex for index/columns)
+        # If nothing to show, return a truly empty DataFrame (RangeIndex for index/columns)  # noqa: E501
         if not rows and not cols:
             return pd.DataFrame()
 
