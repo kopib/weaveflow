@@ -1,3 +1,17 @@
+"""
+This module provides utility functions for filesystem operations, primarily
+focused on filtering and handling collections of file paths. These helpers are
+used internally to support features that involve reading multiple files from a
+directory.
+
+The main function, `_handle_files_from_iterable`, is a key component of the
+`@spool` decorator's logic. It allows the decorator to flexibly include or
+exclude configuration files from a directory based on user-provided patterns.
+For example, a user can specify `include=["config"]` to load only files
+containing "config" in their name, or `exclude=["test"]` to ignore test-related
+files. This enables more organized and complex configuration management.
+"""
+
 from collections.abc import Iterable
 from pathlib import Path
 

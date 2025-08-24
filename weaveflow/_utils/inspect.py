@@ -1,3 +1,23 @@
+"""
+This module provides introspection utilities that are fundamental to how
+`weaveflow`'s decorators dynamically understand and interact with the functions
+and classes they wrap. By using Python's `inspect` module, these helpers can
+analyze signatures and attributes at decoration time.
+
+Key Functions:
+- `_get_function_args`: This function is crucial for the `@weave` decorator. It
+  inspects a callable's signature to automatically determine which of its
+  parameters are required positional arguments and which are optional (have
+  default values). This allows `weaveflow` to infer which arguments should be
+  supplied from the DataFrame's columns.
+
+- `_dump_object_to_dict`: This utility supports the `params_from` feature in
+  decorators. It works by instantiating a `@spool`-decorated class and
+  extracting its attributes into a dictionary. This dictionary of parameters
+  can then be injected as keyword arguments into the decorated task function or
+  class `__init__` method, enabling seamless configuration.
+"""
+
 import inspect
 from collections.abc import Callable
 

@@ -1,9 +1,29 @@
 """
 This module contains the core workflow orchestration logic for weaveflow.
 
-The 'Loom' class is the main entry point for executing a pipeline of
-'weave' and 'refine' tasks on a pandas DataFrame. It manages task
-execution, data flow, and metadata collection.
+The `Loom` class is the central orchestrator of the `weaveflow` library. It is
+responsible for executing a data processing pipeline defined as a sequence of
+`@weave` and `@refine` tasks on a pandas DataFrame.
+
+Its key responsibilities include:
+- **Task Execution**: It iterates through a user-provided list of tasks,
+  executing them in the specified order. It intelligently distinguishes
+  between `@weave` and `@refine` tasks and handles them accordingly.
+
+- **Data Flow Management**:
+  - For `@weave` tasks, it automatically inspects the task's metadata to
+    identify the required input columns, supplies them from the main DataFrame,
+    executes the function, and seamlessly concatenates the new output columns
+    back to the DataFrame.
+  - For `@refine` tasks, it passes the entire DataFrame to the task and
+    replaces the `Loom`'s internal DataFrame with the transformed one returned
+    by the task, thus managing the state of the data through sequential steps.
+
+- **Metadata Collection**: As it runs, the `Loom` collects detailed metadata
+  about each task execution (e.g., inputs, outputs, parameters, execution time)
+  into its `weave_collector` and `refine_collector` dictionaries. This metadata
+  is the foundation for the visualization capabilities provided by `WeaveGraph`
+  and `RefineGraph`.
 """
 
 import time

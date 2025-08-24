@@ -1,12 +1,33 @@
 """
 This module implements the '@weave' and '@rethread' decorators.
 
-'@weave' is the primary decorator for defining data transformation tasks
-that create new columns in a DataFrame. It captures metadata about a
-function's inputs, outputs, and parameters.
+`@weave`:
+This is the primary decorator in `weaveflow` for defining feature engineering
+tasks. It is designed to be applied to functions that perform column-wise
+transformations on a pandas DataFrame. A `@weave` function typically takes one
+or more pandas Series as input and returns one or more new Series (or values
+that can be broadcast into a Series).
 
-'@rethread' allows for remapping the input and output names of a weave
-task without altering its core logic, enhancing its reusability.
+The decorator captures critical metadata about the function's signature, which
+the `Loom` orchestrator uses to build a dependency graph:
+- `outputs`: A required argument that specifies the name(s) of the new
+  column(s) the function will create.
+- `nrargs`: An optional integer to specify how many of the function's
+  positional arguments are input columns from the DataFrame.
+- `params_from`: An optional argument to specify a `@spool`-decorated object
+  from which to inject parameters (e.g., constants, hyperparameters).
+
+This metadata, stored in a `WeaveMeta` object, allows `weaveflow` to
+automatically manage data flow, making the pipeline declarative and easy to
+visualize.
+
+`@rethread`:
+This decorator provides a powerful mechanism for enhancing the reusability of
+`@weave` tasks. It allows you to remap the input and output column names of a
+decorated function at runtime without modifying its source code. This is
+particularly useful for applying a generic transformation to DataFrames with
+different column naming conventions. `@rethread` creates a new, wrapped version
+of the function with the updated name mappings.
 """
 
 import functools

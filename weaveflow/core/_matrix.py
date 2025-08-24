@@ -1,7 +1,25 @@
 """
 This module defines the WeaveMatrix class, which provides a tabular,
 matrix-like view of the dependencies between weave tasks and their
-arguments (inputs and outputs).
+arguments (inputs and outputs). It serves as a powerful introspection tool for
+understanding and debugging a `weaveflow` pipeline.
+
+The `WeaveMatrix` transforms the metadata collected by the `Loom` during a
+pipeline run into a pandas DataFrame. This matrix offers a clear and concise
+overview of the data lineage and task relationships:
+
+- **Rows**: Represent all unique data columns (arguments) that are either
+  used as inputs or created as outputs by the `@weave` tasks.
+- **Columns**: Represent all the individual `@weave` tasks in the pipeline.
+- **Cells**: The values in the matrix describe the role of a specific column
+  with respect to a specific task. For example, a cell might contain
+  "required input", "Output", or "required input / Output" if a column is
+  used as an input and then modified in-place.
+
+This tabular view is invaluable for quickly identifying dependencies, spotting
+potential issues, and documenting the overall structure of the feature
+engineering process. It is the underlying component for the
+`WeaveGraph.build_matrix()` method.
 """
 
 from collections.abc import Mapping

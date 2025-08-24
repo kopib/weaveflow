@@ -1,9 +1,29 @@
 """
-This module defines the metadata structures used by the decorators.
+This module defines the core metadata structures, `WeaveMeta` and `RefineMeta`,
+which are used by the `weaveflow` decorators (`@weave`, `@refine`) to attach
+essential information to decorated functions and classes.
 
 These dataclasses are designed to be immutable containers for metadata
-attached to decorated functions and classes, ensuring that the metadata
-remains consistent and safe from unintended modifications.
+ensuring that the pipeline's definition remains consistent and safe from
+unintended modifications during runtime. This immutability is enforced by using
+`@dataclass(frozen=True)` and by returning defensive copies of mutable
+attributes (lists, dicts) via a custom `__getattribute__` method.
+
+`WeaveMeta`:
+    Attached by the `@weave` decorator. It captures the signature of a feature
+    engineering task, including:
+    - `_rargs`: Required input columns from the DataFrame.
+    - `_oargs`: Optional input columns.
+    - `_outputs`: The names of the new columns the task will create.
+    - `_params`: Parameters injected from a `@spool`-decorated object.
+    - `_meta_mapping`: A dictionary for remapping input/output names, used by `@rethread`.
+
+`RefineMeta`:
+    Attached by the `@refine` decorator. It stores information about a
+    DataFrame-level transformation, including:
+    - `_refine_description`: A user-provided description of the task.
+    - `_on_method`: The name of the method to execute when a class is decorated.
+    - `_params`: Parameters injected from a `@spool`-decorated object.
 """
 
 from dataclasses import dataclass

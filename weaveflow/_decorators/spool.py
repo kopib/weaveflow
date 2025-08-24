@@ -1,6 +1,36 @@
 """
-This module provides the '@spool' and '@spool_asset' decorators, which
-are used to automatically populate objects with data from configuration files.
+This module provides the `@spool` and `@spool_asset` decorators, which are
+central to `weaveflow`'s philosophy of separating configuration from code. These
+decorators automate the loading of parameters, constants, and small datasets
+from external files directly into Python objects.
+
+Core Functionality:
+- **Parameter Externalization**: Instead of hardcoding values (like model
+  hyperparameters, thresholds, or file paths) in your pipeline logic, you can
+  store them in configuration files (e.g., YAML, JSON, TOML).
+- **Automatic Population**: The decorators read these files and inject the
+  data as attributes into a decorated class or as an accessible object for a
+  decorated function.
+- **Extensible File Support**: Natively supports JSON, YAML, and TOML. The
+  `custom_engine` parameter allows users to provide their own reader functions
+  to support other formats, such as CSVs (using `pandas.read_csv`).
+
+Decorators:
+- **`@spool`**: The primary decorator. It can be configured with a specific path,
+  file, or include/exclude patterns to find configuration files.
+  - When applied to a class, it injects the loaded data as keyword arguments
+    into the class's `__init__` method.
+  - When applied to a function, it returns an `SPoolRegistry` instance, which
+    is a simple object providing attribute-style access to the loaded data.
+- **`@spool_asset`**: A convenience wrapper around `@spool`. It is designed to
+  load from a pre-configured "assets" directory, which can be set globally
+  via `weaveflow.options.set_weaveflow_option`. This simplifies the common use
+  case of having a dedicated folder for pipeline assets.
+
+`SPoolRegistry`:
+A simple dataclass that holds the loaded configuration data and makes it
+accessible via attributes (e.g., `config.my_parameter`). This is the return
+type for functions decorated with `@spool`.
 """
 
 import functools

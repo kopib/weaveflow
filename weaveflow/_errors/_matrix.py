@@ -1,5 +1,16 @@
 """
-This module defines custom exceptions related to the WeaveMatrix functionality.
+This module defines custom exceptions related to the `WeaveMatrix` class,
+which is used for creating a tabular representation of a `weaveflow` pipeline.
+
+Having specific exception types improves error handling and provides clearer,
+more actionable feedback to the user when they misuse the API.
+
+`InvalidTaskCollectionError`:
+This `ValueError` is raised when the `WeaveMatrix` is initialized with a data
+structure that does not conform to its expected input format. The matrix
+builder requires a dictionary mapping task names to their metadata, and this
+exception ensures that malformed inputs are caught early with a descriptive
+error message.
 """
 
 

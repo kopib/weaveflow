@@ -1,6 +1,18 @@
 """
 This module defines custom exceptions related to the @spool decorator
-and its associated functionality.
+and its associated functionality for parameter injection.
+
+By centralizing these exceptions, `weaveflow` can provide consistent and
+user-friendly error messages that guide developers toward correct usage of the
+framework's dependency injection features.
+
+`ParamsFromIsNotASpoolError`:
+This `TypeError` is a crucial validation check within decorators like `@weave`
+and `@refine`. It is raised when the `params_from` argument is provided with an
+object that has not been decorated with `@spool` or `@spool_asset`. This
+prevents runtime errors and immediately informs the user that their
+configuration or parameter object is not correctly set up for injection,
+providing a helpful suggestion to fix the issue.
 """
 
 

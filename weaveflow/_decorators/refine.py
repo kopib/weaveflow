@@ -1,6 +1,29 @@
 """
-This module implements the '@refine' decorator, which is designed for
-tasks that perform sequential, in-place transformations on a DataFrame.
+This module implements the `@refine` decorator, a key component of `weaveflow`
+for defining sequential, stateful transformations on an entire pandas DataFrame.
+
+Unlike `@weave` tasks, which are typically stateless and operate on columns to
+create new columns, `@refine` tasks are designed for broader operations that
+modify the state of the DataFrame itself. This includes actions like:
+- Filtering rows based on complex conditions.
+- Dropping or filling missing values (e.g., `df.dropna()`).
+- Grouping and aggregating data.
+- Sorting the DataFrame.
+
+The `@refine` decorator can be applied to both functions and classes.
+
+- **On Functions**: The decorated function must accept a DataFrame as its first
+  argument and return a transformed DataFrame.
+
+- **On Classes**: This is useful for more complex, multi-step transformations.
+  The decorator wraps the class, and when the `Loom` executes it, it
+  instantiates the class (passing the DataFrame to `__init__`) and then calls
+  a specified method (via the `on_method` argument, which defaults to "run").
+
+A crucial feature is the `params_from` argument, which allows for dependency
+injection. By pointing to a `@spool`-decorated object, you can pass external
+configurations or parameters to the refine task, making it more flexible and
+reusable.
 """
 
 import functools

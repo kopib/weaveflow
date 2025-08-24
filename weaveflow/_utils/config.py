@@ -1,9 +1,18 @@
 """
 This module manages global configuration settings for the weaveflow package.
 
-It provides functions to set and retrieve package-level options, such as
-default paths or feature flags, allowing for centralized configuration
-management.
+It offers a simple, centralized mechanism for setting and retrieving
+package-level options that can affect the behavior of various components. This
+is particularly useful for defining environment-wide settings without having to
+pass them repeatedly to different functions or classes.
+
+The primary use case is setting the `asset_path` for the `@spool_asset`
+decorator, allowing a user to define a single, consistent location for all
+their configuration files.
+
+The module exposes `set_weaveflow_option` to modify settings and an internal
+`_get_option` to retrieve them, providing a controlled interface to a private,
+module-level settings dictionary.
 """
 
 from collections.abc import Iterable

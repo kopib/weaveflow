@@ -1,8 +1,33 @@
+"""
+This script serves as a comprehensive, runnable example demonstrating the core
+features and concepts of the `weaveflow` library. It constructs a realistic
+financial analysis pipeline to identify potentially undervalued stocks from a
+generated dataset of companies.
+
+The script showcases:
+- **`@spool_asset`**: How to load external configuration and data (e.g., market
+  assumptions from YAML, industry metrics from CSVs) into strongly-typed
+  dataclasses, separating configuration from code.
+- **`@weave`**: How to define feature engineering functions that create new
+  DataFrame columns (e.g., calculating `cost_of_equity`, `wacc`, and
+  `fair_value_dfc`). It demonstrates automatic dependency injection of both
+  DataFrame columns and spooled parameters.
+- **`@refine`**: How to use a class to perform broad, sequential
+  transformations on the entire DataFrame, such as data cleaning, filtering,
+  and final selection logic.
+- **`Loom`**: The central orchestrator that takes the initial DataFrame and a
+  list of tasks, executing the entire pipeline in the correct order.
+- **`WeaveGraph` and `RefineGraph`**: How to generate and save visualizations of
+  the data flow and processing stages after the pipeline has run, providing
+  clear documentation and insight into the process.
+"""
+
 import functools
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
 import numpy as np
 import pandas as pd
 
@@ -58,9 +83,7 @@ def generate_data(seed: int = 42, num_companies: int = 50) -> pd.DataFrame:
         "free_cash_flow_millions": np.round(
             np.random.uniform(100, 5000, num_companies), 1
         ),
-        "revenue_growth_rate": np.round(
-            np.random.uniform(-0.02, 0.25, num_companies), 3
-        ),
+        "revenue_growth_rate": np.round(np.random.uniform(-0.02, 0.25, num_companies), 3),
         "debt_to_equity": np.round(np.random.uniform(0.1, 2.5, num_companies), 2),
     }
     companies_df = pd.DataFrame(data)
@@ -167,9 +190,7 @@ class DataPreprocessor:
 
     def _remove_missing_values(self):
         """Drops rows with any NaN values."""
-        self.df.dropna(
-            subset=["pe_ratio"], inplace=True
-        )  # Only drop if pe_ratio is missing
+        self.df = self.df.dropna(subset=["pe_ratio"])  # Only drop if pe_ratio is missing
 
     def _cap_pe_by_industry(self):
         """Filters out companies with P/E ratios above their industry's cap."""
@@ -229,15 +250,17 @@ def discounted_cashflow_model(
     years = np.arange(1, n + 1)
 
     # Calculate future cash flows (as before)
-    cumulative_growth_matrix = np.power((1 + growth_ratio).values[:, np.newaxis], years)
+    cumulative_growth_matrix = np.power(
+        (1 + growth_ratio).to_numpy()[:, np.newaxis], years
+    )
     future_cash_flows = pd.DataFrame(
-        free_cash_flow_millions.values[:, np.newaxis] * cumulative_growth_matrix,
+        free_cash_flow_millions.to_numpy()[:, np.newaxis] * cumulative_growth_matrix,
         index=free_cash_flow_millions.index,
         columns=[f"FCF_Year_{i}" for i in years],
     )
 
     # Note: `wacc` must be a Series with the same index as the companies
-    discount_factors = 1 / np.power((1 + wacc).values[:, np.newaxis], years)
+    discount_factors = 1 / np.power((1 + wacc).to_numpy()[:, np.newaxis], years)
 
     # Pandas broadcasts the discount_factors correctly across the rows
     present_values = future_cash_flows * discount_factors

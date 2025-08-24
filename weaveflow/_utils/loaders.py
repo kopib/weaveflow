@@ -1,3 +1,26 @@
+"""
+This module contains the core logic for loading configuration data from files.
+It serves as the engine behind the `@spool` and `@spool_asset` decorators,
+orchestrating the entire process of finding, parsing, and merging data from
+various sources.
+
+The main entry point is `_load_config_data`, which consolidates all the
+functionality. Its key responsibilities include:
+- **Path Resolution**: Determining the correct directory to search for files,
+  either from a user-specified path or by inferring it from the location of
+  the decorated object.
+- **File Discovery**: Handling different loading scenarios, such as loading a
+  single specific file (`_load_config_data_specific`) or globbing a directory
+  for multiple files based on supported extensions (`_load_config_data_multiple`).
+- **Filtering**: Applying `include` and `exclude` patterns to filter the list
+  of discovered files.
+- **Parsing**: Using the `_ConfigReader` (from `parsers.py`) to read and parse
+  the content of each file, with support for custom engines for non-standard
+  file types (e.g., CSV).
+- **Merging**: Aggregating the data from all parsed files into a single
+  dictionary that can be injected into a task.
+"""
+
 from collections.abc import Callable, Iterable
 from inspect import getfile
 from pathlib import Path

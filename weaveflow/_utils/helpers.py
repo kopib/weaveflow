@@ -1,5 +1,13 @@
 """
-This module provides utility functions shared across the decorator implementations.
+This module provides small, general-purpose helper functions that are shared
+across the `weaveflow` package to perform common data manipulation and
+type-checking tasks.
+
+These utilities help to reduce code duplication and improve the robustness of
+the decorators and core logic. For example, `_dump_str_to_list` is used to
+standardize an argument that can be either a single string or a list of strings
+into a consistent list format. This simplifies the internal logic of decorators
+like `@weave`, which accept such flexible inputs for parameters like `outputs`.
 """
 
 

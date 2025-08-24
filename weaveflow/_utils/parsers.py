@@ -1,3 +1,24 @@
+"""
+This module is responsible for parsing different configuration file formats,
+acting as a key component of the `@spool` data loading mechanism. It provides
+a standardized way to read structured data from files into Python dictionaries.
+
+It contains individual, private reader functions for common formats supported
+natively by `weaveflow`:
+- `_read_toml`: For TOML files.
+- `_read_yaml`: For YAML files.
+- `_read_json`: For JSON files.
+
+The central component is the `_ConfigReader` class, which acts as a dispatcher
+or factory. It inspects a given file's extension and selects the appropriate
+reader function to parse its content.
+
+A key feature of `_ConfigReader` is its extensibility. It allows a `custom_engine`
+dictionary to be passed during initialization, which maps file extensions to
+custom reader callables (e.g., `{'csv': pd.read_csv}`). This makes the data
+loading system highly flexible and adaptable to project-specific needs.
+"""
+
 import json
 import tomllib
 from collections.abc import Callable
@@ -9,7 +30,7 @@ import yaml
 def _read_toml(path: str | Path) -> dict:
     """Convert a TOML file to a dictionary."""
     try:
-        with open(path, "rb") as f:
+        with Path.open(path, "rb") as f:
             return tomllib.load(f)
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File not found: {path}") from e
@@ -20,7 +41,7 @@ def _read_toml(path: str | Path) -> dict:
 def _read_yaml(path: str | Path) -> dict:
     """Convert a YAML file to a dictionary."""
     try:
-        with open(path, encoding="utf-8") as f:
+        with Path.open(path, encoding="utf-8") as f:
             return yaml.safe_load(f)
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File not found: {path}") from e
@@ -31,7 +52,7 @@ def _read_yaml(path: str | Path) -> dict:
 def _read_json(path: str | Path) -> dict:
     """Convert a JSON file to a dictionary."""
     try:
-        with open(path, encoding="utf-8") as f:
+        with Path.open(path, encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError as e:
         raise FileNotFoundError(f"File not found: {path}") from e

@@ -1,9 +1,31 @@
 """
 This module provides the graph visualization capabilities for weaveflow.
 
-It uses networkx and graphviz to build and render visual representations
-of both 'weave' and 'refine' task dependencies, helping to illustrate
-the data processing pipeline.
+It is the visualization heart of the library, responsible for transforming the
+metadata collected by the `Loom` orchestrator into insightful, easy-to-read
+graphs. It uses the `networkx` library for graph data structure construction
+and the `graphviz` library for rendering the final visual output.
+
+This module provides two main classes for visualization:
+
+- **`WeaveGraph`**: This class visualizes the data lineage of the feature
+  engineering steps defined by `@weave` tasks. It generates a directed acyclic
+  graph (DAG) where nodes represent data columns (inputs, outputs, parameters)
+  and the `@weave` functions themselves. The edges clearly show how data flows
+  from input columns, through transformation tasks, to produce new output
+  columns. This is invaluable for understanding how features are derived and
+  for debugging complex dependencies. It can also generate a `WeaveMatrix` for
+  a tabular view of the dependencies.
+
+- **`RefineGraph`**: This class visualizes the high-level, sequential flow of
+  the data refinement process. It creates a linear graph that shows the order
+  in which `@refine` tasks are executed, illustrating the transformation of the
+  DataFrame from its initial state ("Start DataFrame") to its final state
+  ("End DataFrame"). It also visualizes any `@spool`-decorated objects that
+  provide parameters to these refinement steps.
+
+Both graph classes are highly customizable, offering control over size, layout,
+the display of execution timers, and the inclusion of a legend.
 """
 
 from abc import ABC, abstractmethod
