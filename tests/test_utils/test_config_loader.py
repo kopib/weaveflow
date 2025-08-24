@@ -23,8 +23,6 @@ def test_handle_elements_from_iterable():
 
 def test_handle_elements_from_iterable_with_path():
     """Test the handle_elements_from_iterable function with Path objects."""
-    from pathlib import Path
-
     files = [
         Path("/home/user/file_registry.json"),
         Path("/home/user/file_registry.toml"),
@@ -101,7 +99,9 @@ def test_custom_config_loader_type_error(test_data_path):
 
 def test_load_config_data_no_obj_or_path_error():
     """Test error when neither obj nor path is specified."""
-    with pytest.raises(ValueError, match="Either 'obj' or 'path' must be specified"):
+    with pytest.raises(
+        ValueError, match="Either 'obj', 'path' or 'file_feed' must be specified."
+    ):
         _load_config_data()
 
 
@@ -157,3 +157,13 @@ def test_load_csv_custom_engine(test_data_path):
     }
     assert data["children_dict"] == {"0": 0, "1": 400, "2": 700, "3": 950}
     assert data["subscription_int"] == 45
+
+
+def test_load_config_data_with_file_feed(test_data_path):
+    """Test loading config data with a file feed."""
+    data = _load_config_data(
+        path=test_data_path,
+        specific_file="dummy_spool.json",  # {"c": 3, "d": 4}
+        file_feed=test_data_path / "dummy_spool.yaml",  # {"a": 1, "b": 2}, is favoured
+    )
+    assert data == {"a": 1, "b": 2}

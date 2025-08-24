@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any
 
 from weaveflow._utils import (
-    _file_feeder,
     _get_function_args,
     _get_option,
     _load_config_data,
@@ -39,12 +38,6 @@ class SPoolRegistry:
                 setattr(self, key, value)
 
         self.__dict__ = dict(self._kwargs)
-
-    @classmethod
-    def from_file(cls, path: str) -> "SPoolRegistry":
-        """Create an InputRegistry instance from a config file."""
-        data = _file_feeder(path)
-        return cls(data)
 
 
 def spool(
