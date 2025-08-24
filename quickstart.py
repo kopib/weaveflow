@@ -34,8 +34,11 @@ def delayed(seconds: int = 1):
     return decorator
 
 
-def generate_data(seed: int = 42, num_companies: int = 50):
-    # Generate random data
+def generate_data(seed: int = 42, num_companies: int = 50) -> pd.DataFrame:
+    """
+    Generate random data for the specific process illustrated here.
+    """
+
     np.random.seed(seed)
     industries = ["Technology", "Healthcare", "Industrials", "Consumer Goods"]
     company_names = [f"Company_{i + 1}" for i in range(num_companies)]

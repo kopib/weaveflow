@@ -8,13 +8,14 @@ execution, data flow, and metadata collection.
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
 from typing import override
 import time
 import pandas as pd
 
 from weaveflow._decorators._weave import _is_weave
 from weaveflow._decorators._refine import _is_refine
+from weaveflow._utils import _dump_str_to_list
 
 
 class _BaseWeave(ABC):
@@ -62,6 +63,36 @@ class PandasWeave(_BaseWeave):
             raise TypeError("Database must be a pandas DataFrame")
         if not isinstance(self.optionals, dict):
             raise TypeError("Optionals must be a dictionary")
+
+    @staticmethod
+    def _infer_columns_from_weaves(weave_tasks: Iterable[Callable]) -> set[str]:
+        """
+        Finds the first weave task from a iterable of weave tasks and returns its
+        required arguments as a strating point for the whole execution process.
+
+        Note: Sometimes the user has a data base for which only a specific set of
+            columns is needed for a specific task/purpose. In this case, the user
+            can either pre-select the needed columns or can infer them automatically.
+            The automatic inference is based on the weave tasks (as this is the
+            basis for graph creation and node inference). This is useful when the
+            user is not sure about the required columns and does not want to care
+            about it, which, obvisouyly I do not recommend. Ideally the user SHOULD
+            be aware of the data. However, I (unfortunately) deem this to be a valid
+            use case.
+        """
+        args = set()
+
+        # Update args with the required arguments of the first weave task
+        for weave_task in weave_tasks:
+            if _is_weave(weave_task):
+                _args = getattr(weave_task, "_weave_meta")._rargs
+                args.update(set(_args))
+
+        # If no weave tasks found, raise an error
+        if not args:
+            raise ValueError("No arguments found")
+
+        return args
 
     @staticmethod
     def dump_to_frame(outputs: list[str], calculation_output: any, **kwargs):
@@ -266,6 +297,10 @@ class Loom(PandasWeave):
         tasks: Iterable[callable],
         weaveflow_name: str = "default",
         optionals: dict[str, dict[str]] = None,
+        infer_weave_columns: str | bool = False,
+        refine_columns: str | list[str] = None,
+        weave_columns: str | list[str] = None,
+        columns: str | list[str] = None,
         **kwargs,
     ):
         """Initializes the Loom orchestrator.
@@ -283,12 +318,60 @@ class Loom(PandasWeave):
         all_tasks = list(tasks)
         # Filter only weave tasks
         filtered_weave_tasks = [task for task in tasks if _is_weave(task)]
-        # TODO: Rename weave_tasks to tasks
+        # Pre-select columns if specified by user
+        database = self._pre_select_columns(
+            database=database,
+            infer_weave_columns=infer_weave_columns,
+            refine_columns=refine_columns,
+            weave_columns=weave_columns,
+            columns=columns,
+        )
         # TODO: Loom being the main workflow orchestrator, differ between PandasWeave, DaskWeave, etc.
         super().__init__(database, filtered_weave_tasks, weaveflow_name, optionals, **kwargs)
         self.tasks = all_tasks  # All tasks
         self.refine_collector = defaultdict(dict)
         self.__pre_init__()
+
+    def _pre_select_columns(
+        self,
+        database: pd.DataFrame,
+        infer_weave_columns: str | bool = False,
+        refine_columns: str | list[str] = None,
+        weave_columns: str | list[str] = None,
+        columns: str | list[str] = None,
+    ) -> pd.DataFrame:
+        """
+        Pre-select columns for the database based on user input.
+        """
+        # If columns argument is specified, ignore all other arguments and use only those
+        if columns is not None:
+            columns = _dump_str_to_list(columns)
+            self.check_intersection_columns_dataframe(database, columns)
+            return database[columns]
+        
+        # If refine columns are specified, use them as a starting point
+        if refine_columns is not None:
+            refine_columns = _dump_str_to_list(refine_columns)
+
+            # If weave columns are specified, add them to the refine columns
+            # and return the resulting columns
+            if weave_columns is not None:
+                weave_columns = _dump_str_to_list(weave_columns)
+                columns = refine_columns + weave_columns
+                self.check_intersection_columns_dataframe(database, columns)
+                return database[columns]
+            
+            # If infer weave columns is True, infer the columns from the weave tasks
+            # and add them to the refine columns
+            if infer_weave_columns:
+                inferred_weave_columns: set = self._infer_columns_from_weaves(self.weave_tasks)
+                inferred_weave_columns = [col for col in inferred_weave_columns if col in database]
+                columns = refine_columns + inferred_weave_columns
+                self.check_intersection_columns_dataframe(database, refine_columns)
+                return database[columns]
+        
+        # If no columns are specified, return the database as is
+        return database
 
     @override
     def __pre_init__(self):
