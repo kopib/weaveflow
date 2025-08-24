@@ -1,5 +1,5 @@
 import pytest
-from weaveflow._decorators._meta import WeaveMeta, RefineMeta
+from weaveflow._decorators import WeaveMeta, RefineMeta
 from weaveflow import weave, rethread
 
 

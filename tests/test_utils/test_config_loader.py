@@ -2,7 +2,7 @@ from pathlib import Path
 from pandas import DataFrame, read_csv
 from pandas.testing import assert_frame_equal
 import pytest
-from weaveflow._decorators._spool import (
+from weaveflow._utils import (
     _handle_files_from_iterable,
     _load_config_data,
 )

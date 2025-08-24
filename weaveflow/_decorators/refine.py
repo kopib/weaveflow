@@ -7,9 +7,9 @@ import functools
 import inspect
 from typing import Any, Callable
 
-from weaveflow._decorators._meta import RefineMeta
+from .meta import RefineMeta
 from weaveflow._errors import ParamsFromIsNotASpoolError
-from weaveflow._decorators._utils import dump_object_to_dict
+from weaveflow._utils import _dump_object_to_dict
 
 
 def _is_refine(f: Callable) -> bool:
@@ -83,7 +83,7 @@ def refine(
             return func_or_class
 
         # Get params from object and name of object
-        params = dump_object_to_dict(params_from)
+        params = _dump_object_to_dict(params_from)
         params_object_name = getattr(params_from, "__name__", None)
 
         # Determine the on_method at decoration time, not at runtime

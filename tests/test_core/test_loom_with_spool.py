@@ -6,7 +6,7 @@ from weaveflow.core import Loom
 from weaveflow._decorators import spool, weave
 
 
-@spool(path=Path(__file__).parent / "data")
+@spool(path=Path(__file__).parent.parent / "data")
 @dataclass
 class Constants:
     """Data class for collection all variables from registry config files."""

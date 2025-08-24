@@ -1,10 +1,3 @@
-"""
-This module provides a configuration reader for various file formats.
-
-It includes a flexible '_ConfigReader' class that can handle JSON, YAML,
-and TOML files, and can be extended to support custom file types.
-"""
-
 from collections.abc import Callable
 from pathlib import Path
 import json

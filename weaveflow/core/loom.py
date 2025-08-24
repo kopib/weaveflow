@@ -13,8 +13,8 @@ from typing import override
 import time
 import pandas as pd
 
-from weaveflow._decorators._weave import _is_weave
-from weaveflow._decorators._refine import _is_refine
+from weaveflow._decorators import _is_weave
+from weaveflow._decorators import _is_refine
 from weaveflow._utils import _dump_str_to_list
 
 

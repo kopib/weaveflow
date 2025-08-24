@@ -12,8 +12,8 @@ import graphviz
 
 from pandas import DataFrame
 import networkx as nx
-from weaveflow.core.loom import Loom
-from weaveflow.core._matrix import WeaveMatrix
+from .loom import Loom
+from ._matrix import WeaveMatrix
 
 
 def _get_graph_attr(attrs: dict[str, str] = None):

@@ -3,11 +3,11 @@ from pathlib import Path
 from pandas import DataFrame, read_csv
 from pandas.testing import assert_frame_equal
 from weaveflow._decorators import spool_asset
-from weaveflow._decorators._spool import SPoolRegistry
+from weaveflow._decorators import SPoolRegistry
 from weaveflow.options import set_weaveflow_option
 
 
-set_weaveflow_option("asset_path", Path(__file__).parent / "data")
+set_weaveflow_option("asset_path", Path(__file__).parent.parent / "data")
 
 
 @spool_asset
@@ -112,5 +112,5 @@ def test_custom_engine_in_spool():
     """Test custom engine in spool decorator."""
     city_costs = CityCosts()
     assert isinstance(city_costs.costs, DataFrame)
-    expected_data = read_csv(Path(__file__).parent / "data" / "costs.csv")
+    expected_data = read_csv(Path(__file__).parent.parent / "data" / "costs.csv")
     assert_frame_equal(city_costs.costs, expected_data)

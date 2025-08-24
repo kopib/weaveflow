@@ -11,55 +11,10 @@ task without altering its core logic, enhancing its reusability.
 
 from dataclasses import replace
 import functools
-import inspect
 
-from weaveflow._decorators._meta import WeaveMeta
+from .meta import WeaveMeta
 from weaveflow._errors import ParamsFromIsNotASpoolError
-from weaveflow._decorators._utils import dump_object_to_dict
-
-
-def _get_function_args(f: callable, nrargs: int = None) -> tuple[list[str], list[str]]:
-    """
-    Identifies the required and optional arguments of a function.
-    Returns two lists: (required_args, optional_args).
-    """
-
-    # Check if nargs is provided and is an integer
-    if nrargs is not None and not isinstance(nrargs, int):
-        raise ValueError("Argument 'nrargs' must be an integer.")
-
-    # Check if nargs is negative
-    if isinstance(nrargs, int) and nrargs < 0:
-        raise ValueError("Argument 'nrargs' must be a non-negative integer.")
-
-    required = []
-    optional = []
-
-    # Get the signature of the function
-    sig = inspect.signature(f)
-
-    # Iterate through each parameter in the signature
-    for param in sig.parameters.values():
-        if param.default == inspect.Parameter.empty:
-            required.append(param.name)
-        else:
-            optional.append(param.name)
-
-    if isinstance(nrargs, int) and nrargs > 0:
-        if optional:
-            raise ValueError(
-                "Function has optional arguments, but 'nrargs' is specified. "
-                "Please remove 'nrargs' or the optional arguments."
-            )
-
-        if len(required) < nrargs:
-            raise ValueError(
-                f"Function {f.__name__} requires at least {nrargs} inputs, but only {len(required)} were found."
-            )
-        required = required[:nrargs]
-        optional = optional[nrargs:]
-
-    return required, optional
+from weaveflow._utils import _get_function_args, _dump_object_to_dict
 
 
 def _is_weave(f: callable) -> bool:
@@ -93,7 +48,7 @@ def weave(outputs: str | list[str], nrargs: int = None, params_from: object = No
         # Set function attributes
         required_args, optional_args = _get_function_args(f, nrargs)
 
-        params = dump_object_to_dict(params_from)
+        params = _dump_object_to_dict(params_from)
         required_args = [arg for arg in required_args if arg not in params]
 
         weave_meta = WeaveMeta(

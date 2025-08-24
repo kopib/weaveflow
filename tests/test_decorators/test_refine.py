@@ -11,7 +11,7 @@ from weaveflow.options import set_weaveflow_option
 # Set include_spool to consider files containing basename "costs" in their name
 set_weaveflow_option(
     ["asset_path", "include_spool"],
-    [Path(__file__).parent / "data", "costs"],
+    [Path(__file__).parent.parent / "data", "costs"],
 )
 
 

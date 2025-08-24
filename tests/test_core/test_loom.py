@@ -1,8 +1,7 @@
 import pandas as pd
 import pytest
 from weaveflow import Loom, weave, rethread
-from weaveflow._decorators._meta import WeaveMeta
-from weaveflow._decorators._weave import _is_weave
+from weaveflow._decorators import WeaveMeta, _is_weave
 
 
 @weave(outputs="sum")
