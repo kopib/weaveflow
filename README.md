@@ -43,9 +43,6 @@ Stop wrestling with tangled scripts and start weaving elegant data stories.
 *   **Reproducibility**: By structuring your code and externalizing parameters, `weaveflow` pipelines are easier to reproduce and validate.
 *   **Code as Configuration**: Your pipeline is defined by a simple list of functions and classes, making it self-documenting.
 
-## 📦 Installation
-
-`weaveflow` is currently in an active development (alpha) stage. You can not install the pre-release from PyPI yet - but it will be soon when the package is considered stable, stay tuned!
 
 ## 🔧 Local Development Setup
 
