@@ -354,6 +354,7 @@ class Loom(PandasWeave):
         database = self._pre_select_columns(
             database=database,
             infer_weave_columns=infer_weave_columns,
+            weave_tasks=filtered_weave_tasks,
             refine_columns=refine_columns,
             weave_columns=weave_columns,
             columns=columns,
@@ -370,6 +371,7 @@ class Loom(PandasWeave):
         self,
         database: pd.DataFrame,
         infer_weave_columns: str | bool = False,
+        weave_tasks: Iterable[Callable] | None = None,
         refine_columns: str | list[str] | None = None,
         weave_columns: str | list[str] | None = None,
         columns: str | list[str] | None = None,
@@ -383,33 +385,44 @@ class Loom(PandasWeave):
             self.check_intersection_columns_dataframe(database, columns)
             return database[columns]
 
+        # Initialize lists for building up the final column set
+        final_refine_cols = []
+        final_weave_cols = []
+
         # If refine columns are specified, use them as a starting point
         if refine_columns is not None:
-            refine_columns = _dump_str_to_list(refine_columns)
+            final_refine_cols = _dump_str_to_list(refine_columns)
 
-            # If weave columns are specified, add them to the refine columns
-            # and return the resulting columns
-            if weave_columns is not None:
-                weave_columns = _dump_str_to_list(weave_columns)
-                columns = refine_columns + weave_columns
-                self.check_intersection_columns_dataframe(database, columns)
-                return database[columns]
-
-            # If infer weave columns is True, infer the columns from the weave tasks
-            # and add them to the refine columns
-            if infer_weave_columns:
-                inferred_weave_columns: set = self._infer_columns_from_weaves(
-                    self.weave_tasks
+        # If weave columns are specified, add them to the refine columns
+        # and return the resulting columns
+        if weave_columns is not None:
+            final_weave_cols = _dump_str_to_list(weave_columns)
+        elif infer_weave_columns:
+            # If we want to infer the weave columns, but no weave tasks
+            # are provided, raise an error
+            if weave_tasks is None:
+                raise ValueError(
+                    "Cannot infer weave columns without providing weave tasks."
                 )
-                inferred_weave_columns = [
-                    col for col in inferred_weave_columns if col in database
-                ]
-                columns = refine_columns + inferred_weave_columns
-                self.check_intersection_columns_dataframe(database, refine_columns)
-                return database[columns]
+            inferred_cols = self._infer_columns_from_weaves(weave_tasks)
+            # Filter to only columns that actually exist in the input DataFrame
+            final_weave_cols = [col for col in inferred_cols if col in database.columns]
+
+        final_cols = final_refine_cols + final_weave_cols
+
+        # If after all that, no columns were selected, return the original DB
+        if not final_cols:
+            return database
+
+        # Combine refine and weave columns
+        columns = (refine_columns or []) + (weave_columns or [])
+
+        # Remove duplicates while preserving order and validate
+        unique_final_cols = list(dict.fromkeys(final_cols))
+        self.check_intersection_columns_dataframe(database, unique_final_cols)
 
         # If no columns are specified, return the database as is
-        return database
+        return database[unique_final_cols]
 
     @override
     def __pre_init__(self):

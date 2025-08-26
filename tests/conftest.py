@@ -1,8 +1,8 @@
 from pathlib import Path
-import pandas as pd
-from numpy import nan
-import pytest
 
+import pandas as pd
+import pytest
+from numpy import nan
 
 _DF = pd.DataFrame(
     {
