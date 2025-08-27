@@ -25,7 +25,7 @@ Stop wrestling with tangled scripts and start weaving elegant data stories.
 
 *   **🔪 Refining**: Make your data **`refineable`**. A `@refine` decorator marks classes or functions that perform larger, sequential transformations on the entire DataFrame, such as cleaning, filtering, dropping rows, or grouping. These steps form a clear, linear processing chain.
 
-*   **🛢️ spooling**: Externalize your parameters effortlessly. The `@spool_asset` decorator loads constants, configurations, and even small data files (like CSVs or YAML) into dataclasses, making your pipeline's parameters transparent and easy to manage outside your code.
+*   **🛢️ spooling**: Externalize your parameters effortlessly. The `@spool_asset` decorator loads constants, configurations, and even small data files via customized engines (like CSVs) into dataclasses, making your pipeline's parameters transparent and easy to manage outside your code.
 
 *   **🧶 Loom**: The `Loom` is the heart of `weaveflow`. It's the orchestrator that takes your initial DataFrame and a list of `weaveable` and `refineable` tasks, and executes them in the correct order, managing all dependencies automatically.
 
