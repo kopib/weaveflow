@@ -1,0 +1,22 @@
+,calculate_cost_of_equity,calculate_wacc,discounted_cashflow_model,get_analyst_ratings,get_cost_of_debt,get_industry_metrics,get_market_data
+addon,,,,,optional input,,
+analyst_rating,,,,Output,,,
+average_dividend_yield,,,,,,Output,
+average_pe_ratio,,,,,,Output,
+betas,required input,,,,,,Output
+cost_of_debt,,required input,,,Output,,
+cost_of_equity,Output,required input,,,,,
+current_price,,,required input,,,,
+debt_to_equity,,required input,,,,,
+discount,,,Output,,,,
+erp,required input,,,,,,Output
+fair_value_dfc,,,Output,,,,
+free_cash_flow_millions,,,required input,,,,
+industry,,,required input,,,required input,required input
+market_cap_billions,,required input,,,,,
+n,,,optional input,,,,
+price_target,,,,Output,,,
+rf_rate,required input,,,,required input,,Output
+tax_rate,,optional input,,,,,
+ticker,,,,required input,,,
+wacc,,Output,required input,,,,

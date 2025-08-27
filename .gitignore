@@ -10,7 +10,6 @@ wheels/
 .venv
 
 # Output files
-assets/output/matrix
 assets/archive
 
 *.log
