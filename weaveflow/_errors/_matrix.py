@@ -32,3 +32,32 @@ class InvalidTaskCollectionError(ValueError):
 
     def __init__(self, detail: str):
         super().__init__(f"Invalid task collection for WeaveMatrix: {detail}")
+
+
+def _validate_registry_type(registry: dict) -> dict:
+    if not isinstance(registry, dict):
+        raise InvalidTaskCollectionError("Registry must be a dictionary")
+
+    for task_name, meta in registry.items():
+        if not isinstance(task_name, str):
+            raise InvalidTaskCollectionError("Task names must be strings")
+        if not isinstance(meta, dict):
+            raise InvalidTaskCollectionError("Task metadata must be a dictionary")
+        for key, value in meta.items():
+            if not isinstance(key, str):
+                raise InvalidTaskCollectionError("Metadata keys must be strings")
+
+            if key == "delta_time" and not isinstance(value, (int, float)):
+                raise InvalidTaskCollectionError("Delta time must be a number")
+
+            if key != "delta_time" and not isinstance(value, (str, list)):
+                raise InvalidTaskCollectionError("Metadata values must be Iterable or str")
+
+            if (
+                key != "delta_time"
+                and isinstance(value, list)
+                and not all(isinstance(v, str) for v in value)
+            ):
+                raise InvalidTaskCollectionError("Metadata lists must contain strings")
+
+    return registry

@@ -26,7 +26,7 @@ from collections.abc import Mapping
 
 import pandas as pd
 
-from weaveflow._errors import InvalidTaskCollectionError
+from weaveflow._errors import InvalidTaskCollectionError, _validate_registry_type
 
 
 class WeaveMatrix:
@@ -57,6 +57,7 @@ class WeaveMatrix:
             raise InvalidTaskCollectionError(
                 "task_collection must be a mapping of task_name -> dict"
             )
+        task_collection = _validate_registry_type(task_collection)
         self._tasks = task_collection or {}
 
     def build(self) -> pd.DataFrame:

@@ -34,6 +34,8 @@ import graphviz
 import networkx as nx
 from pandas import DataFrame
 
+from weaveflow._utils import _auto_convert_time_delta
+
 from ._matrix import WeaveMatrix
 from .loom import Loom
 
@@ -174,7 +176,7 @@ class _BaseGraph(ABC):
                 if not available.
         """
         dt = collection[node]["delta_time"] if node in collection else None
-        return f"{dt:,.1f}" if dt else None
+        return _auto_convert_time_delta(dt) if dt else None
 
     def _style_graph_nodes(self, g: graphviz.Digraph, shapes: dict, colors: dict):
         """Applies styles (shape, color) to all nodes in the graph.
