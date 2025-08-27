@@ -38,3 +38,18 @@ def _auto_convert_time_delta(delta_in_seconds: int | float) -> float:
         return f"{delta_in_seconds / 60:.1f}m"
 
     return f"{delta_in_seconds / 3600:.1f}h"
+
+
+def _convert_large_int_to_human_readable(number: int) -> str:
+    """Convert a large integer to a human-readable format."""
+
+    if number < 0:
+        return f"-{_convert_large_int_to_human_readable(abs(number))}"
+
+    if number < 1_000:
+        return str(number)
+    if number < 1_000_000:
+        return f"{number / 1000:,.1f}k"
+    if number < 1_000_000_000:
+        return f"{number / 1000000:,.1f}mn"
+    return f"{number / 1_000_000_000:,.1f}bn"

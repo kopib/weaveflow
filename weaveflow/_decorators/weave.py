@@ -47,8 +47,35 @@ def _is_weave(f: callable) -> bool:
 def weave(
     outputs: str | list[str], nrargs: int | None = None, params_from: object = None
 ) -> callable:
-    # TODO: Infer number of inputs if not provided
+    """
+    Decorator to mark a function as a 'weave' task for DataFrame transformations.
 
+    A 'weave' task is a function that takes one or more pandas Series as input
+    and returns one or more new Series (or values that can be broadcast into a
+    Series). The decorator captures metadata about the function's signature,
+    including input and output columns, and additional parameters that can be
+    injected from a `@spool`-decorated object.
+
+    Args:
+        outputs (str | list[str]): The name(s) of the new column(s) the function
+            will create.
+        nrargs (int | None, optional): The number of required input arguments
+            that are input columns from the DataFrame. If not provided, it is
+            assumed that all arguments are input columns. Defaults to None.
+        params_from (object | None, optional): An optional object decorated with
+            `@spool` from which to inject parameters (e.g., constants, hyperparameters).
+            Defaults to None.
+
+    Returns:
+        callable: The decorated function, enhanced with weave metadata.
+
+    Raises:
+        ValueError: If both 'nrargs' and 'params_from' are provided.
+        TypeError: If 'params_from' is provided but the object is not
+                   decorated with `@spool`.
+        ValueError: If 'outputs' is not a string or a list of strings.
+        ValueError: If 'nrargs' is not a non-negative integer.
+    """
     if params_from and nrargs is not None:
         raise ValueError(
             "Cannot use 'nrargs' and 'params_from' at the same time. "

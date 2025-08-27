@@ -34,7 +34,7 @@ import graphviz
 import networkx as nx
 from pandas import DataFrame
 
-from weaveflow._utils import _auto_convert_time_delta
+from weaveflow._utils import _auto_convert_time_delta, _convert_large_int_to_human_readable
 
 from ._matrix import WeaveMatrix
 from .loom import Loom
@@ -176,7 +176,9 @@ class _BaseGraph(ABC):
                 if not available.
         """
         dt = collection[node]["delta_time"] if node in collection else None
-        return _auto_convert_time_delta(dt) if dt else None
+        if dt is None:
+            return None
+        return _auto_convert_time_delta(dt)
 
     def _style_graph_nodes(self, g: graphviz.Digraph, shapes: dict, colors: dict):
         """Applies styles (shape, color) to all nodes in the graph.
@@ -521,7 +523,6 @@ class RefineGraph(_BaseGraph):
 
             # TODO: Integrate description as tooltip
             # TODO: Intergate on_method argument as label
-            # TODO: Add timer to edges between tasks
 
             if params and params_object:
                 # Add connection between params (config file args) and params_object
@@ -572,33 +573,72 @@ class RefineGraph(_BaseGraph):
                 for p_node in vals.get("params", []):
                     c.node(p_node)
 
-    def _style_graph_edges(self, g: graphviz.Digraph, refine_collector: dict, timer: bool):
+    @staticmethod
+    def _extract_profiler_from_collection(node: str, collection: dict) -> str | None:
+        """Extracts row reduction info and formats it for the edge label."""
+        rows_reduced: int = (
+            collection[node]["rows_reduced"] if node in collection else None
+        )
+        if rows_reduced is None:
+            return None
+
+        return _convert_large_int_to_human_readable(rows_reduced)
+
+    def _style_graph_edges(
+        self,
+        g: graphviz.Digraph,
+        refine_collector: dict,
+        timer: bool,
+        data_profiler: bool,
+    ):
         """Applies styles (penwidth, labels) to all edges in the graph."""
+
+        # Iterate through all existing edges in the graph
         for n1, n2 in self.graph.edges():
             edge_attrs = {}
             edge_data = self.graph.edges[n1, n2]
 
+            # Set edge width for control flow edges
             if edge_data.get("flow") == "control":
                 edge_attrs["penwidth"] = "2.0"
 
+            # Build label from multiple parts
+            label_parts = []
+
+            # Add execution time label if enabled
             if timer:
-                label = self._extract_date_from_collection(n1, refine_collector)
-                if label:
-                    edge_attrs.update(
-                        {
-                            "label": label,
-                            "fontsize": "10",
-                            "fontname": "Helvetica",
-                            "labeldistance": "0.5",
-                            "decorate": "False",
-                        }
-                    )
+                _time_label = self._extract_date_from_collection(n1, refine_collector)
+                if _time_label:
+                    label_parts.append(_time_label)
+
+            # Add row reduction label if enabled
+            if data_profiler:
+                _profiler_label = self._extract_profiler_from_collection(
+                    n1, refine_collector
+                )
+                if _profiler_label:
+                    label_parts.append(f"🔻 {_profiler_label} rows")
+
+            # Add label to edge if parts exist
+            if label_parts:
+                final_label = " | ".join(label_parts)
+                edge_attrs.update(
+                    {
+                        "label": final_label,
+                        "fontsize": "10",
+                        "fontname": "Helvetica",
+                        "labeldistance": "0.5",
+                        "decorate": "False",
+                    }
+                )
+            # Update the edge with the new attributes
             g.edge(n1, n2, **edge_attrs)
 
     def build(
         self,
         size: int = 12,
         timer: bool = False,
+        data_profiler: bool = False,
         mindist: float = 1.2,
         legend: bool = True,
         sink_source: bool = False,
@@ -615,6 +655,8 @@ class RefineGraph(_BaseGraph):
                 TODO: Implement intelligent sizing based on the number of tasks.
             timer (bool, optional): If True, displays the execution time for
                 each refine task on the edges between tasks. Defaults to False.
+            database_profiler (bool, optional): If True, displays the row reduction
+                for each refine task on the edges between tasks. Defaults to False.
             mindist (float, optional): Minimum distance between nodes in the graph.
                 Adjusting this can help with graph layout. Defaults to 1.2.
             legend (bool, optional): If True, includes a color-coded legend
@@ -683,7 +725,7 @@ class RefineGraph(_BaseGraph):
 
         # Style nodes and edges
         self._style_graph_nodes(g, shapes, clrs)
-        self._style_graph_edges(g, refine_collector, timer)
+        self._style_graph_edges(g, refine_collector, timer, data_profiler)
 
         if legend:
             _set_graph_legend(

@@ -129,3 +129,8 @@ def personal_data() -> pd.DataFrame:
     }
     df = pd.DataFrame(data)
     return df
+
+
+@pytest.fixture
+def sample_profile_dataframe() -> pd.DataFrame:
+    return pd.DataFrame({"a": range(100), "b": range(100, 200)})

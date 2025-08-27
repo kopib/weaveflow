@@ -323,5 +323,5 @@ if __name__ == "__main__":
     weave_matrix.to_csv("assets/output/matrix/weave_matrix.csv")
 
     refine_graph = wf.RefineGraph(loomer)
-    g = refine_graph.build(timer=True, sink_source=False)
+    g = refine_graph.build(timer=True, sink_source=False, data_profiler=True)
     g.render("assets/output/graphs/refine_graph", format="png", cleanup=True)

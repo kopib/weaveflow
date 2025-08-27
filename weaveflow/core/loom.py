@@ -26,7 +26,6 @@ Its key responsibilities include:
   and `RefineGraph`.
 """
 
-import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Iterable
@@ -35,7 +34,7 @@ from typing import override
 import pandas as pd
 
 from weaveflow._decorators import _is_refine, _is_weave
-from weaveflow._utils import _dump_str_to_list
+from weaveflow._utils import TaskProfiler, _dump_str_to_list
 
 
 class _BaseWeave(ABC):
@@ -421,9 +420,11 @@ class PandasWeave(_BaseWeave):
         # Build kwargs and execute
         rargs = self._build_required_kwargs(self.database, required_args, rargs_m)
         # Execute with timing for graph edges
-        t0 = time.perf_counter()
-        calculation_output = self._call_weave(weave_task, rargs, oargs, params)
-        dt = time.perf_counter() - t0
+        task_profiler = TaskProfiler(
+            self._call_weave,
+            track_time=True,
+        )
+        calculation_output = task_profiler.run(weave_task, rargs, oargs, params)
         # Record all relevant information for graph/matrix
         self._record_weave_run(
             weave_name=weave_name,
@@ -431,7 +432,7 @@ class PandasWeave(_BaseWeave):
             rargs_m=rargs_m,
             oargs_m=oargs_m,
             params=params,
-            delta_time=dt,
+            delta_time=task_profiler.delta_time,
         )
 
         return calculation_output, outs_m, weave_name
@@ -451,7 +452,6 @@ class PandasWeave(_BaseWeave):
                 continue
 
             # TODO: Add option to extend database 'database_t' or 'self.database'
-            # TODO: Make timer work
             # Extend the database with the calculation output
             self.extend_database(
                 outputs=outputs,
@@ -511,6 +511,7 @@ class Loom(PandasWeave):
                 optional arguments. Defaults to None.
             **kwargs: Global optional arguments accessible by weave tasks.
         """
+        # TODO: Introduce verbose mode extend graphical information (e.g. add arg types)
         all_tasks = list(tasks)
         # Filter only weave tasks
         filtered_weave_tasks = [task for task in tasks if _is_weave(task)]
@@ -644,6 +645,7 @@ class Loom(PandasWeave):
         params_object: str,
         description: str,
         delta_time: float,
+        rows_reduced: int,
     ) -> None:
         """Records metadata about a refine task's execution.
 
@@ -666,6 +668,7 @@ class Loom(PandasWeave):
             "params_object": params_object,
             "description": description,
             "delta_time": delta_time,
+            "rows_reduced": rows_reduced,
         }
 
     def _run_refine_task(self, refine_task: callable) -> None:
@@ -681,10 +684,14 @@ class Loom(PandasWeave):
         # Get the meta information from refine object
         refine_meta = refine_task._refine_meta
         refine_name = refine_meta._refine_name
-        # Run calculation and build the graph
-        t0 = time.perf_counter()
-        self.database = refine_task(self.database)
-        dt = time.perf_counter() - t0
+        # Run calculation through profiler and build nodes for the graph
+        task_profiler = TaskProfiler(
+            refine_task,
+            track_time=True,
+            track_data=True,
+            data=self.database,
+        )
+        self.database = task_profiler.run()
         # Record all relevant information for refine graph
         self._record_refine_run(
             refine_task_name=refine_name,
@@ -692,7 +699,8 @@ class Loom(PandasWeave):
             params=list(refine_meta._params),
             params_object=refine_meta._params_object,
             description=refine_meta._refine_description,
-            delta_time=dt,
+            delta_time=task_profiler.delta_time,
+            rows_reduced=task_profiler.rows_reduced,
         )
 
     def _run(self):
