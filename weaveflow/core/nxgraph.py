@@ -39,7 +39,15 @@ from .loom import Loom
 
 
 def _get_graph_attr(attrs: dict[str, str] | None = None):
-    """Get graph attributes with optional overrides."""
+    """Sets default attributes for a graphviz graph.
+
+    Args:
+        attrs (dict[str, str] | None, optional): A dictionary of attributes
+            to override the defaults. Defaults to None.
+
+    Returns:
+        dict: A dictionary of graph attributes.
+    """
     graph_attr = {
         "rankdir": "LR",
         "nodesep": "0.2",
@@ -52,12 +60,16 @@ def _get_graph_attr(attrs: dict[str, str] | None = None):
 
 
 def _add_graph_nodes(graph: nx.DiGraph, nodes: str | list[str], **attrs) -> None:
-    """Updates edges in graph. Throws an error if a key is present and values don't match.
+    """Adds one or more nodes to a networkx graph with specified attributes.
+
+    If a node already exists and the new attributes are different, it updates
+    the node's type to 'arg_req', which is useful for highlighting nodes that
+    serve as both inputs and outputs.
 
     Args:
-        graph (network.DiGraph): Graph to be updated.
-        nodes (str, list): Node(s) to be updated
-        **attrs: Attributes(s)
+        graph (nx.DiGraph): The networkx graph to modify.
+        nodes (str | list[str]): A single node name or a list of node names.
+        **attrs: Attributes to assign to the node(s).
     """
 
     if nodes is None:
@@ -81,6 +93,19 @@ def _add_graph_nodes(graph: nx.DiGraph, nodes: str | list[str], **attrs) -> None
 def _set_graph_legend(
     graph: graphviz.Digraph, names: list[str], colors: list[str]
 ) -> graphviz.Digraph:
+    """Adds a legend to a graphviz graph.
+
+    Creates a subgraph cluster for the legend with styled nodes representing
+    different components of the graph.
+
+    Args:
+        graph (graphviz.Digraph): The graph to add the legend to.
+        names (list[str]): A list of labels for the legend items.
+        colors (list[str]): A list of colors corresponding to the labels.
+
+    Returns:
+        graphviz.Digraph: The graph with the legend added.
+    """
     with graph.subgraph(name="cluster_legend") as c:
         c.attr(
             label="<<b>Legend</b>>",
@@ -108,28 +133,57 @@ class _BaseGraph(ABC):
     """Abstract base class for all weaveflow graphs."""
 
     def __init__(self, loom: Loom):
-        """Create a graph for a given weaveflow."""
+        """Initializes the _BaseGraph.
+
+        Args:
+            loom (Loom): The `Loom` instance containing the execution
+                metadata to be visualized.
+        """
         self.loom = loom
         self.graph = nx.DiGraph()
 
     @abstractmethod
     def _setup(self):
-        """Method to setup the graph."""
+        """Abstract method to set up the graph structure.
+
+        This method should be implemented by subclasses to populate the
+        `self.graph` with nodes and edges based on the loom's collectors.
+        """
         pass
 
     @abstractmethod
     def build(self):
-        """Method to build the graph."""
+        """Abstract method to build and return the visual graph.
+
+        This method should be implemented by subclasses to take the
+        `self.graph` and render it into a `graphviz.Digraph` object.
+        """
         pass
 
     @staticmethod
     def _extract_date_from_collection(node: str, collection: dict[str, dict]) -> str:
-        """Extract delta time from collection if available."""
+        """Extracts and formats the execution time for a task node.
+
+        Args:
+            node (str): The name of the task node.
+            collection (dict[str, dict]): The metadata collector (e.g.,
+                `weave_collector` or `refine_collector`).
+
+        Returns:
+            str: The formatted execution time string (e.g., "12.3") or None
+                if not available.
+        """
         dt = collection[node]["delta_time"] if node in collection else None
         return f"{dt:,.1f}" if dt else None
 
     def _style_graph_nodes(self, g: graphviz.Digraph, shapes: dict, colors: dict):
-        """Applies styles (shape, color) to all nodes in the graph."""
+        """Applies styles (shape, color) to all nodes in the graph.
+
+        Args:
+            g (graphviz.Digraph): The graphviz graph to style.
+            shapes (dict): A dictionary mapping node types to shape names.
+            colors (dict): A dictionary mapping node types to color codes.
+        """
         for k, v in self.graph.nodes.items():
             node_type = v.get("type")
             if node_type in shapes:
@@ -142,9 +196,13 @@ class _BaseGraph(ABC):
                 )
 
     def _rank_source_and_sink_nodes(self, g: graphviz.Digraph) -> None:
-        """
-        Identify and rank source and sink nodes. Can improve readability of the graph.
-        However, it can also make the graph look cluttered, so use with caution.
+        """Ranks source and sink nodes to improve graph layout.
+
+        This can improve readability by aligning start and end nodes, but may
+        also clutter the graph.
+
+        Args:
+            g (graphviz.Digraph): The graphviz graph to modify.
         """
         # Identify and rank source and sink nodes
         source_nodes = [n for n, d in self.graph.in_degree() if d == 0]
@@ -183,7 +241,16 @@ class WeaveGraph(_BaseGraph):
         self.weave_collector = loom.weave_collector
 
     def _setup(self, weaveflow_name: str):
-        """Create graph by adding all relevant nodes and edges."""
+        """Builds the internal networkx graph from weave task metadata.
+
+        Iterates through the `weave_collector` for the specified `weaveflow_name`
+        and adds nodes for tasks, inputs, outputs, and parameters, along with
+        the corresponding edges representing data flow.
+
+        Args:
+            weaveflow_name (str): The name of the weaveflow pipeline to build
+                the graph for.
+        """
 
         for fn, vals in self.weave_collector[weaveflow_name].items():
             # Get all relevant nodes
@@ -206,7 +273,15 @@ class WeaveGraph(_BaseGraph):
             self.graph.add_edges_from([(fn, v) for v in outputs])
 
     def _create_task_clusters(self, g: graphviz.Digraph, weave_collector: dict):
-        """Creates a visually distinct cluster for each weave task."""
+        """Creates visually distinct clusters for each weave task in the graph.
+
+        This helps to group a task with its direct parameter inputs, improving
+        readability.
+
+        Args:
+            g (graphviz.Digraph): The graphviz graph to modify.
+            weave_collector (dict): The metadata collector for weave tasks.
+        """
         # TODO: Fix warning
         for fn, vals in weave_collector.items():
             with g.subgraph(name=f"cluster_{fn}") as c:
@@ -223,7 +298,17 @@ class WeaveGraph(_BaseGraph):
                     c.node(p_node)
 
     def _style_graph_edges(self, g: graphviz.Digraph, weave_collector: dict, timer: bool):
-        """Applies styles (dashed, labels) to all edges in the graph."""
+        """Applies styles to edges in the graph.
+
+        This includes making edges for optional arguments dashed and adding
+        execution time labels if `timer` is enabled.
+
+        Args:
+            g (graphviz.Digraph): The graphviz graph to style.
+            weave_collector (dict): The metadata collector for weave tasks.
+            timer (bool): If True, adds execution time labels to edges
+                originating from weave tasks.
+        """
         for n1, n2 in self.graph.edges():
             edge_attrs = {}
             node1_type = self.graph.nodes[n1].get("type")
@@ -408,6 +493,16 @@ class RefineGraph(_BaseGraph):
         self.refine_collector = loom.refine_collector
 
     def _setup(self, weaveflow_name: str):
+        """Builds the internal networkx graph from refine task metadata.
+
+        Iterates through the `refine_collector` and creates a sequential
+        graph representing the flow of DataFrame transformations. It adds
+        nodes for tasks, parameters, and start/end boundaries.
+
+        Args:
+            weaveflow_name (str): The name of the weaveflow pipeline to build
+                the graph for.
+        """
         refine_collector = self.refine_collector[weaveflow_name]
         # Add nodes and edges for each refine task
         for fn, vals in refine_collector.items():
@@ -451,7 +546,14 @@ class RefineGraph(_BaseGraph):
             self.graph.add_edge(refine_tasks[-1], "End DataFrame", flow="control")
 
     def _create_task_clusters(self, g: graphviz.Digraph, refine_collector: dict) -> None:
-        """Creates a visually distinct cluster for each refine task."""
+        """Creates visually distinct clusters for each refine task in the graph.
+
+        This groups a task with its associated `@spool` object and parameters.
+
+        Args:
+            g (graphviz.Digraph): The graphviz graph to modify.
+            refine_collector (dict): The metadata collector for refine tasks.
+        """
         for fn, vals in refine_collector.items():
             with g.subgraph(name=f"cluster_{fn}") as c:
                 c.attr(

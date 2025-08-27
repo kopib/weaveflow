@@ -42,11 +42,23 @@ class _BaseWeave(ABC):
     """Abstract base class for all weaves."""
 
     def __init__(self, weave_tasks: list[callable], weaveflow_name: str):
+        """Initializes the _BaseWeave abstract base class.
+
+        Args:
+            weave_tasks (list[callable]): A list of weave tasks to be executed.
+            weaveflow_name (str): The name of the weaveflow pipeline.
+        """
         self.weave_tasks = weave_tasks
         self.weaveflow_name = weaveflow_name
         self.weave_collector = defaultdict(dict)
 
     def __pre_init__(self):
+        """Performs pre-initialization checks.
+
+        Raises:
+            TypeError: If 'weave_tasks' is not an iterable of weave tasks or
+                if it contains a non-weave task.
+        """
         if not isinstance(self.weave_tasks, Iterable):
             raise TypeError("'weave_tasks' must be a Iterable of weave tasks")
 
@@ -58,12 +70,25 @@ class _BaseWeave(ABC):
 
     @abstractmethod
     def run(self):
-        """Run the main application."""
+        """Abstract method to run the main application logic."""
         pass
 
 
 class PandasWeave(_BaseWeave):
-    """PandasWeave class."""
+    """A weave that operates on pandas DataFrames.
+
+    This class orchestrates the execution of a series of `@weave` tasks on a
+    pandas DataFrame, managing data flow and collecting metadata.
+
+    Attributes:
+        database (pd.DataFrame): The DataFrame to be processed.
+        weave_tasks (Iterable[callable]): A sequence of `@weave` tasks.
+        weaveflow_name (str): Name for the pipeline instance.
+        optionals (dict): Task-specific optional arguments.
+        global_optionals (dict): Global optional arguments for all tasks.
+        weave_collector (defaultdict): A dictionary to store metadata about
+            each weave task execution.
+    """
 
     def __init__(
         self,
@@ -73,12 +98,30 @@ class PandasWeave(_BaseWeave):
         optionals: dict[str, dict[str]] | None = None,
         **kwargs,
     ):
+        """Initializes the PandasWeave orchestrator.
+
+        Args:
+            database (pd.DataFrame): The initial DataFrame to process.
+            weave_tasks (Iterable[Callable]): A sequence of `@weave` decorated
+                functions to be executed.
+            weaveflow_name (str, optional): A name for this pipeline instance.
+                Defaults to "default".
+            optionals (dict[str, dict[str]] | None, optional): Task-specific
+                optional arguments. Defaults to None.
+            **kwargs: Global optional arguments accessible by all weave tasks.
+        """
         super().__init__(weave_tasks, weaveflow_name)
         self.database = database
         self.optionals = optionals or {}
         self.global_optionals = kwargs
 
     def __pre_init__(self):
+        """Performs pre-initialization checks for PandasWeave.
+
+        Raises:
+            TypeError: If 'database' is not a pandas DataFrame or if
+                'optionals' is not a dictionary.
+        """
         if not isinstance(self.database, pd.DataFrame):
             raise TypeError("Database must be a pandas DataFrame")
         if not isinstance(self.optionals, dict):
@@ -86,19 +129,29 @@ class PandasWeave(_BaseWeave):
 
     @staticmethod
     def _infer_columns_from_weaves(weave_tasks: Iterable[Callable]) -> set[str]:
-        """
-        Finds the first weave task from a iterable of weave tasks and returns its
-        required arguments as a strating point for the whole execution process.
+        """Infers required columns from a collection of weave tasks.
 
-        Note: Sometimes the user has a data base for which only a specific set of
-            columns is needed for a specific task/purpose. In this case, the user
-            can either pre-select the needed columns or can infer them automatically.
-            The automatic inference is based on the weave tasks (as this is the
-            basis for graph creation and node inference). This is useful when the
-            user is not sure about the required columns and does not want to care
-            about it, which, obvisouyly I do not recommend. Ideally the user SHOULD
-            be aware of the data. However, I (unfortunately) deem this to be a valid
-            use case.
+        This method scans through the provided weave tasks and aggregates all
+        required arguments (`_rargs`) into a set of column names. This is
+        useful for automatically selecting a subset of columns from a larger
+        DataFrame that are necessary for a specific pipeline.
+
+        Note:
+            This automatic inference is based on the weave tasks, which form
+            the basis for graph creation and node inference. It is useful when
+            the user is not sure about the required columns. However, it is
+            recommended that the user be aware of their data and select
+            columns explicitly where possible.
+
+        Args:
+            weave_tasks (Iterable[Callable]): A sequence of `@weave` decorated
+                functions.
+
+        Returns:
+            set[str]: A set of required column names.
+
+        Raises:
+            ValueError: If no arguments are found in any of the weave tasks.
         """
         args = set()
 
@@ -116,18 +169,21 @@ class PandasWeave(_BaseWeave):
 
     @staticmethod
     def dump_to_frame(outputs: list[str], calculation_output: any, **kwargs):
-        """
-        Dump the calculation output to a pandas DataFrame that can be concatenated
-        to the database.
+        """Dumps calculation output into a pandas DataFrame.
+
+        This method takes the output of a weave task and organizes it into a
+        DataFrame, which can then be concatenated with the main database.
 
         Args:
-            outputs (list[str]): The names of the outputs.
-            calculation_output (any): The output of the calculation.
-            **kwargs: Additional keyword arguments to pass to the pandas DataFrame
-                constructor.
+            outputs (list[str]): The names of the output columns.
+            calculation_output (any): The result from a weave task. This can be
+                a single Series-like object or a tuple of them.
+            **kwargs: Additional keyword arguments to pass to the
+                `pandas.DataFrame` constructor.
 
         Returns:
-            pd.DataFrame: A pandas DataFrame containing the calculation output.
+            pd.DataFrame: A DataFrame containing the calculation output, with
+                columns named according to `outputs`.
         """
         calculation_output_dict = (
             {outputs[0]: calculation_output}
@@ -140,16 +196,16 @@ class PandasWeave(_BaseWeave):
     def check_intersection_columns_dataframe(
         df: pd.DataFrame, expected_cols: list[str]
     ) -> None:
-        """
-        Check if the columns in the database intersect with the outputs.
+        """Checks if a DataFrame contains all expected columns.
 
         Args:
-            database (pd.DataFrame): The database DataFrame.
-            outputs (list[str]): The list of output column names.
+            df (pd.DataFrame): The DataFrame to check.
+            expected_cols (list[str]): A list of column names that are
+                expected to be in the DataFrame.
 
         Raises:
-            ValueError: If there is an intersection between the database
-                columns and outputs.
+            KeyError: If any of the `expected_cols` are not found in the
+                DataFrame's columns.
         """
         missing_cols = set(expected_cols) - set(df.columns)
 
@@ -159,14 +215,37 @@ class PandasWeave(_BaseWeave):
             )
 
     def extend_database(self, **kwargs) -> None:
-        """Extend the database with the calculation output."""
+        """Extends the main DataFrame with new columns.
+
+        This method takes the output of a weave task, converts it to a
+        DataFrame using `dump_to_frame`, and concatenates it to the main
+        `database`.
+
+        Args:
+            **kwargs: Keyword arguments to be passed to `dump_to_frame`.
+                Typically includes `outputs` and `calculation_output`.
+        """
         calculation_output_frame = self.dump_to_frame(**kwargs)
         self.database = pd.concat([self.database, calculation_output_frame], axis=1)
 
     def _collect_optionals_for_task(
         self, weave_name: str, optional_args: list[str], weave_task: callable
     ) -> dict:
-        """Collect optional arguments for a weave from global and task-specific sources."""
+        """Collects optional arguments for a specific weave task.
+
+        It gathers optional arguments from both global `kwargs` provided to the
+        Loom and task-specific `optionals`. Task-specific arguments override
+        global ones.
+
+        Args:
+            weave_name (str): The name of the weave task.
+            optional_args (list[str]): A list of optional argument names for the
+                task.
+            weave_task (callable): The weave task function itself.
+
+        Returns:
+            dict: A dictionary of resolved optional arguments for the task.
+        """
         oargs = {
             oarg: self.global_optionals[oarg]
             for oarg in optional_args
@@ -185,11 +264,24 @@ class PandasWeave(_BaseWeave):
         optional_args: list[str],
         outputs: list[str],
     ) -> tuple[dict, list[str], list[str], list[str]]:
-        """Resolve effective names using meta mapping without renaming the DataFrame.
+        """Resolves effective input and output column names using rethread metadata.
+
+        This method applies the `_meta_mapping` from a weave task's metadata
+        (set by `@rethread`) to translate the function's internal argument
+        names to the actual column names in the DataFrame.
+
+        Args:
+            weave_meta: The `WeaveMeta` object attached to the task.
+            required_args (list[str]): The original required argument names.
+            optional_args (list[str]): The original optional argument names.
+            outputs (list[str]): The original output column names.
 
         Returns:
-            tuple[dict, list[str], list[str], list[str]]: A tuple containing
-            the name mapping (name_map, rargs_m, oargs_m, outs_m).
+            A tuple containing:
+                - name_map (dict): The mapping dictionary from `@rethread`.
+                - rargs_m (list[str]): The mapped required argument names.
+                - oargs_m (list[str]): The mapped optional argument names.
+                - outs_m (list[str]): The mapped output column names.
         """
         name_map = weave_meta._meta_mapping or {}
         inv_map = {v: k for k, v in name_map.items()}
@@ -204,9 +296,21 @@ class PandasWeave(_BaseWeave):
     def _build_required_kwargs(
         df: pd.DataFrame, required_args: list[str], rargs_m: list[str]
     ) -> dict:
-        """
-        Build kwargs for calling the weave using original param
-        namesnames and mapped columns.
+        """Builds the keyword argument dictionary for calling a weave task.
+
+        This method maps the original function parameter names to the
+        corresponding (potentially remapped) DataFrame columns.
+
+        Args:
+            df (pd.DataFrame): The main DataFrame.
+            required_args (list[str]): The original required argument names of
+                the function.
+            rargs_m (list[str]): The mapped column names from the DataFrame.
+
+        Returns:
+            dict: A dictionary of keyword arguments to be passed to the weave
+                task, where keys are the original parameter names and values
+                are the corresponding pandas Series.
         """
         return {
             orig: df[mapped] for orig, mapped in zip(required_args, rargs_m, strict=False)
@@ -221,7 +325,20 @@ class PandasWeave(_BaseWeave):
         params: dict,
         delta_time: float,
     ) -> None:
-        """Record metadata about the weave run for downstream graph/matrix."""
+        """Records metadata about a weave task's execution.
+
+        This information is stored in the `weave_collector` and is used for
+        generating graphs and matrices.
+
+        Args:
+            weave_name (str): The name of the executed weave task.
+            outputs_m (list[str]): The list of (mapped) output column names.
+            rargs_m (list[str]): The list of (mapped) required input columns.
+            oargs_m (list[str]): The list of (mapped) optional input columns.
+            params (dict): A dictionary of parameters injected from a `@spool`
+                object.
+            delta_time (float): The execution time of the task in seconds.
+        """
         self.weave_collector[self.weaveflow_name][weave_name] = {
             "outputs": outputs_m,
             "rargs": rargs_m,
@@ -232,16 +349,58 @@ class PandasWeave(_BaseWeave):
 
     @staticmethod
     def _call_weave(weave_task: callable, rargs: dict, oargs: dict, params: dict):
-        """Execute the weave task with prepared arguments."""
+        """Executes a weave task with the prepared arguments.
+
+        Args:
+            weave_task (callable): The weave task function to execute.
+            rargs (dict): A dictionary of required arguments (column Series).
+            oargs (dict): A dictionary of optional arguments.
+            params (dict): A dictionary of injected parameters from `@spool`.
+
+        Returns:
+            The result of the weave task execution.
+        """
         return weave_task(**rargs, **oargs, **params)
 
     def _optionals_from_kwargs(self, weave_name: str, weave_optionals: list[str]) -> dict:
+        """Populates task-specific optionals from global kwargs.
+
+        This method is not currently used but is intended to update the
+        `self.optionals` dictionary for a specific task with values found in
+        the global `self.kwargs`.
+
+        Args:
+            weave_name (str): The name of the weave task.
+            weave_optionals (list[str]): The list of optional argument names
+                for the task.
+
+        Returns:
+            dict: The updated dictionary of optional arguments for the task.
+        """
         for oarg in weave_optionals:
             if oarg in self.kwargs:
                 self.optionals[weave_name].update({oarg: self.kwargs[oarg]})
 
     def _run_weave_task(self, weave_task: callable) -> None:
-        """Run a single weave task end-to-end on the current database."""
+        """Executes a single weave task and records its metadata.
+
+        This method orchestrates the entire lifecycle of a single weave task:
+        1. Extracts metadata from the task.
+        2. Resolves optional arguments.
+        3. Remaps input/output names if necessary (`@rethread`).
+        4. Validates that required columns exist.
+        5. Prepares arguments and calls the task.
+        6. Records execution time and metadata.
+
+        Args:
+            weave_task (callable): The `@weave` decorated function to run.
+
+        Returns:
+            A tuple containing:
+                - calculation_output: The result from the weave task.
+                - outs_m (list[str]): The list of (mapped) output column names.
+                - weave_name (str): The name of the weave task.
+        """
         weave_name = weave_task.__name__
         weave_meta = weave_task._weave_meta
 
@@ -278,7 +437,12 @@ class PandasWeave(_BaseWeave):
         return calculation_output, outs_m, weave_name
 
     def run(self):
-        """Run the loomer on the database."""
+        """Executes the weave pipeline.
+
+        This method iterates through all the `weave_tasks` provided during
+        initialization, runs each one, and extends the main DataFrame with
+        the results.
+        """
         for weave_task in self.weave_tasks:
             calculation_output, outputs, weave_name = self._run_weave_task(weave_task)
 
@@ -376,8 +540,36 @@ class Loom(PandasWeave):
         weave_columns: str | list[str] | None = None,
         columns: str | list[str] | None = None,
     ) -> pd.DataFrame:
-        """
-        Pre-select columns for the database based on user input.
+        """Pre-selects columns from the input DataFrame based on user specifications.
+
+        This method provides several ways to select a subset of columns to
+        work on, which can improve performance and clarity. The selection
+        priority is: `columns` > `refine_columns` + `weave_columns` /
+        `infer_weave_columns`.
+
+        Args:
+            database (pd.DataFrame): The initial DataFrame.
+            infer_weave_columns (str | bool, optional): If True, automatically
+                infers required columns from `weave_tasks`. Defaults to False.
+            weave_tasks (Iterable[Callable] | None, optional): The weave tasks
+                to use for column inference. Required if `infer_weave_columns`
+                is True. Defaults to None.
+            refine_columns (str | list[str] | None, optional): A list of
+                columns to keep for refine tasks. Defaults to None.
+            weave_columns (str | list[str] | None, optional): A list of
+                columns to keep for weave tasks. Defaults to None.
+            columns (str | list[str] | None, optional): A list of columns to
+                keep for the entire pipeline, overriding all other column
+                selection arguments. Defaults to None.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing only the selected columns.
+
+        Raises:
+            ValueError: If `infer_weave_columns` is True but `weave_tasks` is
+                not provided.
+            KeyError: If any of the specified columns are not in the
+                DataFrame.
         """
         # If columns argument is specified, ignore all other arguments and use only those
         if columns is not None:
@@ -426,7 +618,15 @@ class Loom(PandasWeave):
 
     @override
     def __pre_init__(self):
-        """Pre-initialization checks."""
+        """Performs pre-initialization checks for the Loom.
+
+        Ensures that the `tasks` attribute is an iterable of callables and
+        that each task is decorated with either `@weave` or `@refine`.
+
+        Raises:
+            TypeError: If `tasks` is not an iterable or contains an invalid
+                task type.
+        """
         if not isinstance(self.tasks, Iterable):
             raise TypeError("'tasks' must be a Iterable of callables")
         for task in self.tasks:
@@ -445,7 +645,21 @@ class Loom(PandasWeave):
         description: str,
         delta_time: float,
     ) -> None:
-        """Record metadata about the refine run for downstream graph/matrix."""
+        """Records metadata about a refine task's execution.
+
+        This information is stored in the `refine_collector` and is used for
+        generating the `RefineGraph`.
+
+        Args:
+            refine_task_name (str): The name of the executed refine task.
+            on_method (str): The name of the method executed (for class-based
+                tasks).
+            params (list[str]): A list of parameter names injected from a
+                `@spool` object.
+            params_object (str): The name of the `@spool` object.
+            description (str): The user-provided description of the task.
+            delta_time (float): The execution time of the task in seconds.
+        """
         self.refine_collector[self.weaveflow_name][refine_task_name] = {
             "on_method": on_method,
             "params": params,
@@ -455,11 +669,14 @@ class Loom(PandasWeave):
         }
 
     def _run_refine_task(self, refine_task: callable) -> None:
-        """Run refine task on the database. The data base is modified in-place.
+        """Executes a single refine task and records its metadata.
+
+        A refine task receives the entire DataFrame and is expected to return
+        a transformed DataFrame, which replaces the Loom's internal `database`.
 
         Args:
-            refine_task (callable): The refine task to run. The task must
-            take a pandas DataFrame as input and return a pandas DataFrame.
+            refine_task (callable): The `@refine` decorated function or class
+                wrapper to run.
         """
         # Get the meta information from refine object
         refine_meta = refine_task._refine_meta
@@ -479,6 +696,7 @@ class Loom(PandasWeave):
         )
 
     def _run(self):
+        """Internal method to execute the full pipeline of tasks."""
         for task in self.tasks:
             # If task is a weave task, calculate new columns and add them to the database
             if _is_weave(task):
@@ -504,5 +722,10 @@ class Loom(PandasWeave):
 
     @override
     def run(self):
-        """Run the loomer on specified database."""
+        """Executes the full weaveflow pipeline.
+
+        This method iterates through the provided `tasks`, dispatching to
+        `_run_weave_task` or `_run_refine_task` as appropriate, and manages
+        the state of the internal DataFrame.
+        """
         self._run()
