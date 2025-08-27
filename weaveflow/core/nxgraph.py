@@ -617,7 +617,10 @@ class RefineGraph(_BaseGraph):
                     n1, refine_collector
                 )
                 if _profiler_label:
-                    label_parts.append(f"🔻 {_profiler_label} rows")
+                    if _profiler_label.startswith("-"):
+                        label_parts.append(f"🔺 {_profiler_label} rows")
+                    else:
+                        label_parts.append(f"🔻 {_profiler_label} rows")
 
             # Add label to edge if parts exist
             if label_parts:
