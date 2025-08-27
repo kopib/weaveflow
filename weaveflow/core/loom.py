@@ -184,6 +184,10 @@ class PandasWeave(_BaseWeave):
             pd.DataFrame: A DataFrame containing the calculation output, with
                 columns named according to `outputs`.
         """
+        # If calculation output is already a DataFrame, return it as it is
+        if isinstance(calculation_output, pd.DataFrame):
+            return calculation_output
+
         calculation_output_dict = (
             {outputs[0]: calculation_output}
             if len(outputs) == 1

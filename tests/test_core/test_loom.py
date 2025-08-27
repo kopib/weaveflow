@@ -17,7 +17,10 @@ def subtract_columns(col1: pd.Series, col2: pd.Series):
 
 @weave(outputs=["mul", "div"])
 def calculate_stats(sum: pd.Series, diff: pd.Series, margin: int = 0):
-    return sum * diff + margin, (sum / diff).astype(int) - margin
+    return pd.DataFrame(
+        data={"mul": sum * diff + margin, "div": (sum / diff).astype(int) - margin},
+        index=sum.index,
+    )
 
 
 @weave(outputs="scaled_mul")

@@ -161,11 +161,7 @@ def get_analyst_ratings(
     analyst_ratings_registry: pd.DataFrame,
 ) -> tuple[Any, ...]:
     rslt = pd.merge(ticker, analyst_ratings_registry, on="ticker", how="left")
-
-    # TODO: Make rslt return work, handle pd.DataFrame output as well
-    # TODO: if columns from data frame exists in the database, ignore them
-    # TODO: It is annyoing for the user to return as tuple
-    return rslt["analyst_rating"], rslt["price_target"]
+    return rslt[["analyst_rating", "price_target"]]
 
 
 @wf.weave(
