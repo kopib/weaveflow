@@ -242,10 +242,10 @@ class PandasWeave(_BaseWeave):
         optional_args: list[str],
         outputs: list[str],
     ) -> tuple[dict, list[str], list[str], list[str]]:
-        """Resolves effective input and output column names using rethread metadata.
+        """Resolves effective input and output column names using reweave metadata.
 
         This method applies the `_meta_mapping` from a weave task's metadata
-        (set by `@rethread`) to translate the function's internal argument
+        (set by `@reweave`) to translate the function's internal argument
         names to the actual column names in the DataFrame.
 
         Args:
@@ -256,7 +256,7 @@ class PandasWeave(_BaseWeave):
 
         Returns:
             A tuple containing:
-                - name_map (dict): The mapping dictionary from `@rethread`.
+                - name_map (dict): The mapping dictionary from `@reweave`.
                 - rargs_m (list[str]): The mapped required argument names.
                 - oargs_m (list[str]): The mapped optional argument names.
                 - outs_m (list[str]): The mapped output column names.
@@ -365,7 +365,7 @@ class PandasWeave(_BaseWeave):
         This method orchestrates the entire lifecycle of a single weave task:
         1. Extracts metadata from the task.
         2. Resolves optional arguments.
-        3. Remaps input/output names if necessary (`@rethread`).
+        3. Remaps input/output names if necessary (`@reweave`).
         4. Validates that required columns exist.
         5. Prepares arguments and calls the task.
         6. Records execution time and metadata.

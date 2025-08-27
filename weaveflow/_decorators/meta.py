@@ -16,7 +16,7 @@ attributes (lists, dicts) via a custom `__getattribute__` method.
     - `_oargs`: Optional input columns.
     - `_outputs`: The names of the new columns the task will create.
     - `_params`: Parameters injected from a `@spool`-decorated object.
-    - `_meta_mapping`: A dictionary for remapping input/output names, used by `@rethread`.
+    - `_meta_mapping`: A dictionary for remapping input/output names, used by `@reweave`.
 
 `RefineMeta`:
     Attached by the `@refine` decorator. It stores information about a

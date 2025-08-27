@@ -39,6 +39,9 @@ from weaveflow._utils import _auto_convert_time_delta, _convert_large_int_to_hum
 from ._matrix import WeaveMatrix
 from .loom import Loom
 
+# TODO: Make graphviz styles configurable when building the graph
+# https://graphviz.org/doc/info/attrs.html
+
 
 def _get_graph_attr(attrs: dict[str, str] | None = None):
     """Sets default attributes for a graphviz graph.
@@ -618,6 +621,7 @@ class RefineGraph(_BaseGraph):
                 )
                 if _profiler_label:
                     if _profiler_label.startswith("-"):
+                        _profiler_label = _profiler_label[1:]  # Get rid of the "-"
                         label_parts.append(f"🔺 {_profiler_label} rows")
                     else:
                         label_parts.append(f"🔻 {_profiler_label} rows")

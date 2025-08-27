@@ -3,12 +3,12 @@ import inspect
 import pandas as pd
 import pytest
 
-from weaveflow import Loom, WeaveGraph, rethread, weave
+from weaveflow import Loom, WeaveGraph, reweave, weave
 
 
-def test_rethread_preserves_identity_and_is_weave():
+def test_reweave_preserves_identity_and_is_weave():
     """
-    Tests that rethread preserves identity and is still a weave task.
+    Tests that reweave preserves identity and is still a weave task.
     """
 
     @weave(outputs="y")
@@ -16,7 +16,7 @@ def test_rethread_preserves_identity_and_is_weave():
         """Original docstring."""
         return x
 
-    g = rethread(f, meta={"x": "x_new", "y": "y_new"})
+    g = reweave(f, meta={"x": "x_new", "y": "y_new"})
 
     # functools.wraps should preserve name and doc
     assert g.__name__ == f.__name__
@@ -25,7 +25,7 @@ def test_rethread_preserves_identity_and_is_weave():
     # Signature should be identical
     assert inspect.signature(g) == inspect.signature(f)
 
-    # _is_weave should hold for rethreaded callable
+    # _is_weave should hold for reweaveed callable
     # We infer via attribute since _is_weave is internal
     assert hasattr(g, "_weave_meta")
 
@@ -39,17 +39,17 @@ def test_rethread_preserves_identity_and_is_weave():
 
 
 @pytest.mark.smoke
-def test_multi_loom_isolation_between_original_and_rethreaded():
+def test_multi_loom_isolation_between_original_and_reweaveed():
     """
-    Tests that original and rethreaded tasks can coexist in different Looms.
+    Tests that original and reweaveed tasks can coexist in different Looms.
     """
 
     @weave(outputs=["sum"])  # original names
     def add(a: pd.Series, b: pd.Series) -> pd.Series:
         return a + b
 
-    # Create rethreaded variant with renamed input and output
-    add2 = rethread(add, meta={"a": "x", "b": "y", "sum": "s"})
+    # Create reweaveed variant with renamed input and output
+    add2 = reweave(add, meta={"a": "x", "b": "y", "sum": "s"})
 
     df = pd.DataFrame({"a": [1, 2], "b": [3, 4], "x": [10, 20], "y": [30, 40]})
 
@@ -57,7 +57,7 @@ def test_multi_loom_isolation_between_original_and_rethreaded():
     loom1 = Loom(df, [add])
     loom1.run()
 
-    # Loom 2 uses rethreaded add2
+    # Loom 2 uses reweaveed add2
     loom2 = Loom(df, [add2])
     loom2.run()
 

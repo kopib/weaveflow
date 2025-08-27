@@ -1,6 +1,6 @@
 import pytest
 
-from weaveflow import rethread, weave
+from weaveflow import reweave, weave
 from weaveflow._decorators import RefineMeta, WeaveMeta
 
 
@@ -138,21 +138,21 @@ def test_refine_meta_params_copy_on_access_and_object_passthrough():
     assert obj1 is obj2
 
 
-def test_rethread_defensive_copy_of_mapping():
+def test_reweave_defensive_copy_of_mapping():
     """
-    Tests that rethreading a weave task with a meta mapping does not affect
+    Tests that reweaveing a weave task with a meta mapping does not affect
     the original mapping.
     """
 
-    # Ensure the meta mapping passed to rethread is defensively copied
+    # Ensure the meta mapping passed to reweave is defensively copied
     @weave(outputs="y")
     def f(x):
         return x
 
     m = {"x": "x_new", "y": "y_new"}
-    g = rethread(f, meta=m)
+    g = reweave(f, meta=m)
 
-    # Mutate original mapping after rethread
+    # Mutate original mapping after reweave
     m["x"] = "CHANGED"
 
     # Access the new meta and confirm mapping did not change internally

@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from weaveflow import Loom, rethread, weave
+from weaveflow import Loom, reweave, weave
 from weaveflow._decorators import WeaveMeta
 from weaveflow._errors import InvalidLoomError
 from weaveflow._utils import _is_weave
@@ -173,11 +173,11 @@ def test_weave_with_optionals(base_dataframe, base_dataframe_input):
     pd.testing.assert_frame_equal(loom.database, base_dataframe_modified)
 
 
-def test_rethread(base_dataframe_input: pd.DataFrame):
-    """Tests rethread function arguments."""
+def test_reweave(base_dataframe_input: pd.DataFrame):
+    """Tests reweave function arguments."""
 
     meta = {"col1": "diff", "col2": "sum"}
-    calculate_stats_t = rethread(calculate_stats, meta=meta)
+    calculate_stats_t = reweave(calculate_stats, meta=meta)
     loom = Loom(database=base_dataframe_input, tasks=[calculate_stats_t])
     loom.run()
 

@@ -1,5 +1,5 @@
 """
-This module implements the '@weave' and '@rethread' decorators.
+This module implements the '@weave' and '@reweave' decorators.
 
 `@weave`:
 This is the primary decorator in `weaveflow` for defining feature engineering
@@ -21,12 +21,12 @@ This metadata, stored in a `WeaveMeta` object, allows `weaveflow` to
 automatically manage data flow, making the pipeline declarative and easy to
 visualize.
 
-`@rethread`:
+`@reweave`:
 This decorator provides a powerful mechanism for enhancing the reusability of
 `@weave` tasks. It allows you to remap the input and output column names of a
 decorated function at runtime without modifying its source code. This is
 particularly useful for applying a generic transformation to DataFrames with
-different column naming conventions. `@rethread` creates a new, wrapped version
+different column naming conventions. `@reweave` creates a new, wrapped version
 of the function with the updated name mappings.
 """
 
@@ -116,7 +116,7 @@ def weave(
     return decorator
 
 
-def rethread(f: callable, meta: dict[str, str] | None = None) -> callable:
+def reweave(f: callable, meta: dict[str, str] | None = None) -> callable:
     """
     Return a new callable with remapped weave metadata, leaving the original untouched.
 

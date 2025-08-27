@@ -1,3 +1,7 @@
+"""
+This module contains shared fixtures for testing.
+"""
+
 from pathlib import Path
 
 import pandas as pd
