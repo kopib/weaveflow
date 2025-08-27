@@ -7,7 +7,7 @@
   <p>
     <a href="https://pypi.org/project/weaveflow/"><img alt="Python Version" src="https://img.shields.io/badge/python-3.13+-blue.svg"></a>
     <a href="https://github.com/astral-sh/ruff"><img alt="Code style: ruff" src="https://img.shields.io/badge/code%20style-ruff-black.svg"></a>
-    <a href="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml"><img alt="CI Status" src="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml/badge.svg"></a>
+    <a href="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml"><img alt="Ubuntu CI" src="https://github.com/kopib/weaveflow/actions/workflows/python-app.yml/badge.svg"></a>
   </p>
 </div>
 
