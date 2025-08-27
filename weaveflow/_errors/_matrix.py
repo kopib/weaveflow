@@ -31,10 +31,27 @@ class InvalidTaskCollectionError(ValueError):
     """
 
     def __init__(self, detail: str):
+        """Initialize the InvalidTaskCollectionError with a detailed message."""
         super().__init__(f"Invalid task collection for WeaveMatrix: {detail}")
 
 
 def _validate_registry_type(registry: dict) -> dict:
+    """Validate type of the registry.
+
+    Iterates through the registry and checks that all keys are strings, all values are
+    dictionaries, and all metadata keys are strings. Also checks that all metadata
+    values are either strings or lists of strings, with the exception of "delta_time"
+    which can be a number.
+
+    Args:
+        registry (dict): The registry to validate.
+
+    Returns:
+        dict: The validated registry.
+
+    Raises:
+        InvalidTaskCollectionError: If the registry is not a dictionary
+    """
     if not isinstance(registry, dict):
         raise InvalidTaskCollectionError("Registry must be a dictionary")
 
