@@ -22,6 +22,16 @@ import inspect
 from collections.abc import Callable
 
 
+def _is_refine(f: Callable) -> bool:
+    """Check if a function is a refine task."""
+    return callable(f) and hasattr(f, "_refine_meta")
+
+
+def _is_weave(f: Callable) -> bool:
+    """Check if a function is a weave task."""
+    return callable(f) and hasattr(f, "_weave_meta")
+
+
 def _get_function_args(
     f: Callable, nrargs: int | None = None
 ) -> tuple[list[str], list[str]]:

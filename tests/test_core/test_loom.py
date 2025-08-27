@@ -2,7 +2,9 @@ import pandas as pd
 import pytest
 
 from weaveflow import Loom, rethread, weave
-from weaveflow._decorators import WeaveMeta, _is_weave
+from weaveflow._decorators import WeaveMeta
+from weaveflow._errors import InvalidLoomError
+from weaveflow._utils import _is_weave
 
 
 @weave(outputs="sum")
@@ -244,5 +246,5 @@ def test_error_on_unknown_task_type(base_dataframe_input: pd.DataFrame):
     def unknown_task(col1: int):
         return col1**2
 
-    with pytest.raises(TypeError):
+    with pytest.raises(InvalidLoomError):
         Loom(database=base_dataframe_input, tasks=[unknown_task])

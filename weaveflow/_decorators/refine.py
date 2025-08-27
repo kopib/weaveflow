@@ -32,14 +32,9 @@ from collections.abc import Callable
 from typing import Any
 
 from weaveflow._errors import ParamsFromIsNotASpoolError
-from weaveflow._utils import _dump_object_to_dict
+from weaveflow._utils import _dump_object_to_dict, _is_refine
 
 from .meta import RefineMeta
-
-
-def _is_refine(f: Callable) -> bool:
-    """Check if a function is a refine task."""
-    return callable(f) and hasattr(f, "_refine_meta")
 
 
 def refine(

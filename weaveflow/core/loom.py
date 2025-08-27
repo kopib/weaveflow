@@ -33,8 +33,8 @@ from typing import override
 
 import pandas as pd
 
-from weaveflow._decorators import _is_refine, _is_weave
-from weaveflow._utils import TaskProfiler, _dump_str_to_list
+from weaveflow._errors import LoomValidator, WeaveTaskValidator
+from weaveflow._utils import TaskProfiler, _dump_str_to_list, _is_refine, _is_weave
 
 
 class _BaseWeave(ABC):
@@ -50,22 +50,6 @@ class _BaseWeave(ABC):
         self.weave_tasks = weave_tasks
         self.weaveflow_name = weaveflow_name
         self.weave_collector = defaultdict(dict)
-
-    def __pre_init__(self):
-        """Performs pre-initialization checks.
-
-        Raises:
-            TypeError: If 'weave_tasks' is not an iterable of weave tasks or
-                if it contains a non-weave task.
-        """
-        if not isinstance(self.weave_tasks, Iterable):
-            raise TypeError("'weave_tasks' must be a Iterable of weave tasks")
-
-        for weave_task in self.weave_tasks:
-            if not _is_weave(weave_task):
-                raise TypeError(
-                    f"Argument 'weave_tasks' contains a non-weave task: {weave_task!r}"
-                )
 
     @abstractmethod
     def run(self):
@@ -109,22 +93,13 @@ class PandasWeave(_BaseWeave):
                 optional arguments. Defaults to None.
             **kwargs: Global optional arguments accessible by all weave tasks.
         """
+        # Validate weave tasks before proceeding
+        WeaveTaskValidator(weave_tasks).validate()
+        # Initialize base class and define attributes
         super().__init__(weave_tasks, weaveflow_name)
         self.database = database
         self.optionals = optionals or {}
         self.global_optionals = kwargs
-
-    def __pre_init__(self):
-        """Performs pre-initialization checks for PandasWeave.
-
-        Raises:
-            TypeError: If 'database' is not a pandas DataFrame or if
-                'optionals' is not a dictionary.
-        """
-        if not isinstance(self.database, pd.DataFrame):
-            raise TypeError("Database must be a pandas DataFrame")
-        if not isinstance(self.optionals, dict):
-            raise TypeError("Optionals must be a dictionary")
 
     @staticmethod
     def _infer_columns_from_weaves(weave_tasks: Iterable[Callable]) -> set[str]:
@@ -632,14 +607,19 @@ class Loom(PandasWeave):
             TypeError: If `tasks` is not an iterable or contains an invalid
                 task type.
         """
-        if not isinstance(self.tasks, Iterable):
-            raise TypeError("'tasks' must be a Iterable of callables")
-        for task in self.tasks:
-            if not (_is_weave(task) or _is_refine(task)):
-                raise TypeError(
-                    f"Argument 'weave_tasks' contains a non-weave"
-                    f"and non-refine task: {task!r}"
-                )
+        LoomValidator(self.database, self.optionals, self.tasks).validate()
+        # if not isinstance(self.database, pd.DataFrame):
+        #     raise TypeError("Database must be a pandas DataFrame")
+        # if not isinstance(self.optionals, dict):
+        #     raise TypeError("Optionals must be a dictionary")
+        # if not isinstance(self.tasks, Iterable):
+        #     raise TypeError("'tasks' must be a Iterable of callables")
+        # for task in self.tasks:
+        #     if not (_is_weave(task) or _is_refine(task)):
+        #         raise TypeError(
+        #             f"Argument 'weave_tasks' contains a non-weave"
+        #             f"and non-refine task: {task!r}"
+        #         )
 
     def _record_refine_run(
         self,

@@ -34,14 +34,9 @@ import functools
 from dataclasses import replace
 
 from weaveflow._errors import ParamsFromIsNotASpoolError
-from weaveflow._utils import _dump_object_to_dict, _get_function_args
+from weaveflow._utils import _dump_object_to_dict, _get_function_args, _is_weave
 
 from .meta import WeaveMeta
-
-
-def _is_weave(f: callable) -> bool:
-    """Check if a function is a weave task."""
-    return callable(f) and hasattr(f, "_weave_meta")
 
 
 def weave(
