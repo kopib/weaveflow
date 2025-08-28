@@ -608,18 +608,6 @@ class Loom(PandasWeave):
                 task type.
         """
         LoomValidator(self.database, self.optionals, self.tasks).validate()
-        # if not isinstance(self.database, pd.DataFrame):
-        #     raise TypeError("Database must be a pandas DataFrame")
-        # if not isinstance(self.optionals, dict):
-        #     raise TypeError("Optionals must be a dictionary")
-        # if not isinstance(self.tasks, Iterable):
-        #     raise TypeError("'tasks' must be a Iterable of callables")
-        # for task in self.tasks:
-        #     if not (_is_weave(task) or _is_refine(task)):
-        #         raise TypeError(
-        #             f"Argument 'weave_tasks' contains a non-weave"
-        #             f"and non-refine task: {task!r}"
-        #         )
 
     def _record_refine_run(
         self,

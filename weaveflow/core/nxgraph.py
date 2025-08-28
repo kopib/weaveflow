@@ -226,6 +226,22 @@ class _BaseGraph(ABC):
                 s.node(node)
 
 
+class BaseGraph(_BaseGraph):
+    """Generates and visualizes the dependency graph for 'base' tasks.
+
+    This class uses networkx to build a directed graph representing the flow
+    of data through `base` tasks within a `Loom` instance. It highlights
+    inputs, outputs, and parameters, and can optionally display execution times.
+
+    Attributes:
+        loom (Loom): The Loom instance containing the executed base tasks.
+        base_collector (defaultdict): A collection of metadata for base tasks.
+    """
+
+    def build(self):
+        pass
+
+
 class WeaveGraph(_BaseGraph):
     """Generates and visualizes the dependency graph for 'weave' tasks.
 
@@ -416,6 +432,8 @@ class WeaveGraph(_BaseGraph):
             }
         )
 
+        # TODO: Allow graph_attr to be passed in instead
+        # TODO: Add support for other graphviz output formats
         g = graphviz.Digraph(graph_attr=graph_attr)
 
         # Rank source and sink nodes if specified
@@ -643,6 +661,7 @@ class RefineGraph(_BaseGraph):
 
     def build(
         self,
+        graph: graphviz.Digraph | None = None,
         size: int = 12,
         timer: bool = False,
         data_profiler: bool = False,
@@ -650,6 +669,7 @@ class RefineGraph(_BaseGraph):
         legend: bool = True,
         sink_source: bool = False,
         cluster_tasks: bool = False,
+        additional_graph_attributes: dict | None = None,
     ) -> graphviz.Digraph:
         """Builds and returns the Graphviz Digraph object for the refine tasks.
 
@@ -657,6 +677,8 @@ class RefineGraph(_BaseGraph):
         tasks, showing the order of operations on the DataFrame.
 
         Args:
+            graph (graphviz.Digraph | None, optional): An existing graphviz graph
+                to build upon. If None, a new graph is created. Defaults to None.
             size (int, optional): The size of the graph in inches (e.g., "12,12!").
                 Defaults to 12.
                 TODO: Implement intelligent sizing based on the number of tasks.
@@ -673,6 +695,8 @@ class RefineGraph(_BaseGraph):
                 Defaults to False.
             cluster_tasks (bool, optional): If True, groups each refine task and
                 its parameters into a distinct visual cluster. Defaults to True.
+            additional_graph_attributes (dict, optional): Additional graph attributes
+                to pass to the graphviz.Digraph constructor. Defaults to None.
 
         Returns:
             graphviz.Digraph: A Graphviz Digraph object representing the refine graph.
@@ -710,6 +734,7 @@ class RefineGraph(_BaseGraph):
         clrs = {k: v[1] for k, v in refine_nodes_style.items()}
         shapes = {k: v[0] for k, v in refine_nodes_style.items()}
 
+        # TODO: Think about whether it makes sense to allow overwriting graph_attr
         # Define attributes for final directed graph
         graph_attr = _get_graph_attr(
             {
@@ -720,7 +745,12 @@ class RefineGraph(_BaseGraph):
             }
         )
 
-        g = graphviz.Digraph(graph_attr=graph_attr)
+        # Update graph attributes if provided
+        if isinstance(additional_graph_attributes, dict):
+            graph_attr.update(additional_graph_attributes)
+
+        # Use existing graph if provided, otherwise create the graphviz graph
+        g = graph or graphviz.Digraph(graph_attr=graph_attr)
 
         # Rank source and sink nodes if specified
         if sink_source:
