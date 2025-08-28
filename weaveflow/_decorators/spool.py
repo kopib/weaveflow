@@ -171,6 +171,8 @@ def spool(
         ```
     """
 
+    # TODO: Allow spool to hold constants in addition to config files
+
     def decorator(func_or_class: Callable) -> Callable:
         func_or_class._spool = True
 

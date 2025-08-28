@@ -21,6 +21,11 @@ packages = ["weaveflow"]
 
 [tool.pytest.ini_options]
 markers = [
+    "refinegraph: tests for the RefineGraph object",
+    "flow: tests for sequential graph flow",
+    "profiler: tests for the data profiler feature",
+    "params: tests for spooled parameters",
+    "cluster: tests for task clustering",
     "smoke: marks tests as smoke tests (quick subset of tests).",
     "weavegraph: marks tests related to the WeaveGraph functionality.",
     "legend: marks tests for the graph legend.",

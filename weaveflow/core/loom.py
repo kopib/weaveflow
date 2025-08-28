@@ -26,7 +26,6 @@ Its key responsibilities include:
   and `RefineGraph`.
 """
 
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Iterable
 from typing import override
@@ -36,25 +35,7 @@ import pandas as pd
 from weaveflow._errors import LoomValidator, WeaveTaskValidator
 from weaveflow._utils import TaskProfiler, _dump_str_to_list, _is_refine, _is_weave
 
-
-class _BaseWeave(ABC):
-    """Abstract base class for all weaves."""
-
-    def __init__(self, weave_tasks: list[callable], weaveflow_name: str):
-        """Initializes the _BaseWeave abstract base class.
-
-        Args:
-            weave_tasks (list[callable]): A list of weave tasks to be executed.
-            weaveflow_name (str): The name of the weaveflow pipeline.
-        """
-        self.weave_tasks = weave_tasks
-        self.weaveflow_name = weaveflow_name
-        self.weave_collector = defaultdict(dict)
-
-    @abstractmethod
-    def run(self):
-        """Abstract method to run the main application logic."""
-        pass
+from ._abstracts import _BaseWeave
 
 
 class PandasWeave(_BaseWeave):
